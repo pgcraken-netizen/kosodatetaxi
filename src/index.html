@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#315C40">
+<title>子育てタクシー 利用者管理システム</title>
+<link rel="icon" href="logo.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --orange:#F28C38; --orange-deep:#D9741F; --orange-soft:#FEF1E4;
+    --green:#315C40; --green-2:#3E6F4E; --leaf:#A8C96B; --leaf-soft:#EEF5E4;
+    --cream:#FFFCF4; --white:#FFFFFF;
+    --red:#E65353; --red-ink:#C43D3D; --red-soft:#FDECEC;
+    --amber:#E9A326; --amber-ink:#A86F08; --amber-soft:#FDF4E1;
+    --teal:#3AAE9F; --teal-ink:#23786D; --teal-soft:#E5F5F2;
+    --grey:#9AA39C; --grey-soft:#F1F2EE;
+    --ink:#294234; --ink-soft:#718073; --line:#E8E7DB;
+    --radius:16px; --radius-s:10px;
+    --shadow:0 1px 2px rgba(41,66,52,.05),0 4px 14px rgba(41,66,52,.05);
+    --side:236px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:15px}
+  body{
+    font-family:system-ui,-apple-system,'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic UI','Meiryo',sans-serif;
+    background:var(--cream);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{font-family:inherit;color:inherit}
+  .ico{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+  .ico.s{width:14px;height:14px}
+  .ico.l{width:24px;height:24px}
+  .hidden{display:none!important}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* ---------- shell ---------- */
+  .side{
+    position:fixed;inset:0 auto 0 0;width:var(--side);background:var(--green);color:#EAF1E6;
+    display:flex;flex-direction:column;z-index:40;overflow-y:auto;
+  }
+  .side .brand{padding:22px 18px 14px;text-align:center}
+  .side .brand .logo-badge{width:112px;height:112px;margin:0 auto;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center}
+  .side .brand img{width:96px;height:auto;display:block}
+  .side .brand .app{font-size:.82rem;font-weight:700;margin-top:10px;letter-spacing:.06em;line-height:1.4}
+  .side nav{display:flex;flex-direction:column;gap:2px;padding:6px 12px}
+  .nav-btn{
+    display:flex;align-items:center;gap:12px;border:none;background:transparent;color:#DCE7D7;
+    font-size:.88rem;padding:10px 14px;border-radius:12px;cursor:pointer;text-align:left;width:100%;
+  }
+  .nav-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-btn.on{background:var(--orange);color:#fff;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+  .nav-btn .cnt{margin-left:auto;font-size:.7rem;font-weight:700;background:var(--red);color:#fff;border-radius:999px;padding:0 7px;line-height:1.6}
+  .side .motto{margin-top:auto;padding:18px;text-align:center;font-size:.76rem;line-height:1.9;color:#C9D9C2}
+  .side .motto svg{display:block;margin:0 auto 6px}
+  .main{margin-left:var(--side);min-height:100vh;display:flex;flex-direction:column}
+  header.top{
+    position:sticky;top:0;z-index:30;background:rgba(255,252,244,.94);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 28px;
+  }
+  header.top h1{font-size:1.08rem;font-weight:700;display:flex;align-items:center;gap:10px;letter-spacing:.04em}
+  header.top .m-brand{display:none;align-items:center;gap:8px}
+  header.top .m-brand img{width:36px;height:36px}
+  header.top .m-brand b{font-size:.82rem;line-height:1.3}
+  .icon-btn{position:relative;border:none;background:transparent;width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+  .icon-btn:hover{background:var(--white)}
+  .icon-btn .dot{position:absolute;top:4px;right:3px;min-width:18px;height:18px;border-radius:999px;background:var(--orange);color:#fff;font-size:.66rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+  .staff{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--white);border-radius:999px;padding:5px 14px 5px 6px;font-size:.8rem;cursor:pointer}
+  .staff .av{width:28px;height:28px;border-radius:50%;background:var(--orange-soft);color:var(--orange-deep);display:flex;align-items:center;justify-content:center}
+  .spacer{flex:1}
+  #menuBtn{display:none}
+  .content{padding:22px 28px 60px;max-width:1440px;width:100%}
+  .privacy-note{font-size:.72rem;color:var(--ink-soft);text-align:center;padding:14px 20px 26px;margin-top:auto}
+
+  /* ---------- cards / panels ---------- */
+  .panel{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .panel-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .panel-h h2{font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:8px}
+  .panel-b{padding:16px 18px}
+  .muted{color:var(--ink-soft)}
+  .small{font-size:.78rem}
+
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px}
+  .stat{
+    display:flex;align-items:center;gap:16px;border-radius:var(--radius);padding:18px 20px;border:1px solid;cursor:pointer;text-align:left;
+    transition:transform .12s, box-shadow .12s;background:var(--white);width:100%;
+  }
+  .stat:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .stat .si{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none}
+  .stat .si .ico{width:26px;height:26px}
+  .stat .sl{font-size:.8rem;font-weight:700}
+  .stat .sv{font-size:2rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+  .stat .sv small{font-size:.85rem;font-weight:700;margin-left:3px}
+  .stat .ss{font-size:.7rem;color:var(--ink-soft)}
+  .stat.g{background:var(--leaf-soft);border-color:#D6E6C2}.stat.g .si{background:#fff;color:var(--green)}.stat.g .sv{color:var(--green)}
+  .stat.r{background:var(--red-soft);border-color:#F6CFCF}.stat.r .si{background:#fff;color:var(--red)}.stat.r .sv{color:var(--red-ink)}
+  .stat.a{background:var(--amber-soft);border-color:#F3DFB4}.stat.a .si{background:#fff;color:var(--amber)}.stat.a .sv{color:var(--amber-ink)}
+  .stat.t{background:var(--teal-soft);border-color:#C7E8E2}.stat.t .si{background:#fff;color:var(--teal)}.stat.t .sv{color:var(--teal-ink)}
+
+  /* ---------- filter bar ---------- */
+  .fbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+  .search{flex:1 1 280px;display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:42px}
+  .search input{border:none;outline:none;background:transparent;flex:1;font-size:.88rem;min-width:0;padding:9px 0}
+  .search:focus-within{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-soft)}
+  .sel{position:relative;display:inline-flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:0 10px;min-height:42px;font-size:.82rem}
+  .sel select{border:none;background:transparent;font-size:.84rem;padding:9px 2px;outline:none;cursor:pointer;max-width:190px}
+  .sel:focus-within{border-color:var(--orange)}
+  .sel.on{border-color:var(--orange);background:var(--orange-soft)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-2px 0 12px}
+  .fchip{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;background:var(--orange-soft);color:var(--orange-deep);border:1px solid #F7CBA3;border-radius:999px;padding:2px 6px 2px 10px;cursor:pointer}
+  .fchip:hover{background:#FDE3CB}
+  .linkbtn{border:none;background:none;color:var(--ink-soft);font-size:.76rem;cursor:pointer;text-decoration:underline;padding:2px 4px}
+  .linkbtn:hover{color:var(--orange-deep)}
+
+  /* ---------- buttons ---------- */
+  .btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;border-radius:999px;font-weight:700;letter-spacing:.04em;transition:.15s;font-size:.85rem;padding:9px 18px;white-space:nowrap}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-o{background:var(--orange);color:#fff;box-shadow:0 3px 10px rgba(242,140,56,.3)}
+  .btn-o:not(:disabled):hover{background:var(--orange-deep)}
+  .btn-g{background:var(--green);color:#fff}
+  .btn-g:not(:disabled):hover{background:var(--green-2)}
+  .btn-w{background:var(--white);border:1px solid var(--line);color:var(--ink)}
+  .btn-w:not(:disabled):hover{border-color:var(--orange);color:var(--orange-deep)}
+  .btn-s{font-size:.76rem;padding:5px 12px}
+  .btn-lg{font-size:1rem;padding:13px 40px}
+  .btn-danger{background:var(--white);border:1px solid #F3C4C4;color:var(--red-ink)}
+  .btn-danger:hover{background:var(--red-soft)}
+
+  /* ---------- badges ---------- */
+  .badge{display:inline-flex;align-items:center;gap:3px;font-size:.68rem;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap;line-height:1.6}
+  .badge .ico{width:11px;height:11px;stroke-width:2.4}
+  .b-red{background:var(--red);color:#fff}
+  .b-amber{background:var(--amber);color:#fff}
+  .b-teal{background:var(--teal);color:#fff}
+  .b-over{background:#fff;color:var(--red-ink);border:1px solid var(--red)}
+  .b-none{background:var(--grey-soft);color:var(--ink-soft);border:1px solid var(--line)}
+  .tag{display:inline-flex;align-items:center;gap:3px;font-size:.68rem;font-weight:700;border-radius:6px;padding:1px 7px;white-space:nowrap}
+  .t-unc{background:var(--red-soft);color:var(--red-ink)}
+  .t-prog{background:var(--amber-soft);color:var(--amber-ink)}
+  .t-done{background:var(--teal-soft);color:var(--teal-ink)}
+  .t-nil{color:var(--ink-soft)}
+  .pri-高{background:var(--red-soft);color:var(--red-ink)}
+  .pri-中{background:var(--amber-soft);color:var(--amber-ink)}
+  .pri-低{background:var(--grey-soft);color:var(--ink-soft)}
+
+  /* ---------- people list ---------- */
+  .dash-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px;align-items:start}
+  .list-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;font-size:.76rem;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  .list-meta .sortinfo{margin-left:auto}
+  .plist{--cols:minmax(130px,1.25fr) 96px minmax(100px,1fr) minmax(110px,1.1fr) 92px 22px}
+  .plist.wide{--cols:minmax(150px,1.3fr) 110px 74px minmax(110px,1fr) minmax(130px,1.3fr) 108px 92px 22px}
+  .phead,.prow{display:grid;grid-template-columns:var(--cols);gap:12px;align-items:center;padding:0 16px}
+  .phead{font-size:.72rem;color:var(--ink-soft);font-weight:700;min-height:36px;border-bottom:1px solid var(--line);background:#FDFCF6}
+  .phead .sk{border:none;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left;padding:0;display:inline-flex;align-items:center;gap:2px}
+  .phead .sk:hover,.phead .sk.on{color:var(--orange-deep)}
+  .prow{min-height:62px;border-bottom:1px solid var(--line);cursor:pointer;font-size:.82rem;position:relative;background:var(--white)}
+  .prow:hover{background:#FFFBF2}
+  .prow.st-red{background:#FFF4F3}
+  .prow.st-red:hover{background:#FDECEA}
+  .prow.st-red::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--red)}
+  .prow.st-over::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:repeating-linear-gradient(180deg,var(--red) 0 6px,transparent 6px 10px)}
+  .prow.sel{box-shadow:inset 0 0 0 2px var(--orange)}
+  .prow .who{display:flex;align-items:center;gap:10px;min-width:0}
+  .prow .av{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--orange-soft);color:var(--orange-deep);font-weight:700;font-size:.85rem}
+  .prow.st-red .av{background:#FBD9D9;color:var(--red-ink)}
+  .prow .nm{font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prow.st-red .nm{color:var(--red-ink)}
+  .prow .sub{font-size:.68rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prow .ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .prow .due b{font-weight:700;font-variant-numeric:tabular-nums}
+  .prow .chev{color:var(--ink-soft)}
+  .days{font-variant-numeric:tabular-nums;font-weight:700}
+  .days.red{color:var(--red-ink)}.days.amber{color:var(--amber-ink)}.days.over{color:var(--red-ink)}
+  .pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:10px 16px;font-size:.78rem;color:var(--ink-soft);flex-wrap:wrap}
+  .pager select{border:1px solid var(--line);border-radius:8px;padding:3px 6px;background:#fff;font-size:.78rem}
+  .empty{padding:40px 20px;text-align:center;color:var(--ink-soft);font-size:.86rem}
+  .empty .ico{width:40px;height:40px;color:var(--leaf);margin-bottom:8px}
+
+  /* ---------- map ---------- */
+  .mapbox{position:relative;height:420px;background:#EEF2E8;border-radius:12px;overflow:hidden}
+  .mapbox.big{height:calc(100vh - 230px);min-height:420px}
+  .mapbox .ph{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--ink-soft);font-size:.82rem}
+  .legend{display:flex;gap:10px;font-size:.7rem;color:var(--ink-soft);flex-wrap:wrap;align-items:center}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+  .map-pane:fullscreen{background:var(--cream);padding:14px;overflow:auto}
+  .map-pane:fullscreen .mapbox{height:calc(100vh - 140px)}
+  .selcard{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer;background:var(--white)}
+  .selcard:hover{border-color:var(--orange)}
+  .selcard.st-red{background:#FFF4F3;border-color:#F6CFCF}
+  .geo-progress{font-size:.74rem;color:var(--ink-soft)}
+  .leaflet-container{font-family:inherit!important}
+  .leaflet-tooltip{font-size:.74rem;border-radius:8px}
+
+  /* ---------- drawer ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(41,66,52,.28);z-index:60;opacity:0;pointer-events:none;transition:opacity .18s}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--cream);z-index:70;transform:translateX(102%);transition:transform .2s ease;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(41,66,52,.12)}
+  .drawer.on{transform:none}
+  .drawer .dh{display:flex;align-items:flex-start;gap:12px;padding:18px 18px 14px;border-bottom:1px solid var(--line);background:var(--white)}
+  .drawer .dh .av{width:46px;height:46px;border-radius:50%;background:var(--orange-soft);color:var(--orange-deep);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex:none}
+  .drawer .db{overflow-y:auto;padding:16px 18px 40px;display:flex;flex-direction:column;gap:14px}
+  .kv{display:grid;grid-template-columns:96px 1fr;gap:8px 12px;font-size:.84rem}
+  .kv dt{color:var(--ink-soft);font-size:.76rem;padding-top:2px}
+  .kv dd{word-break:break-all}
+  .sec-t{font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  .actions{display:flex;flex-wrap:wrap;gap:8px}
+  .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+  .field label{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
+  .inp,textarea.inp,select.inp{font-size:.88rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;width:100%}
+  .inp:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-soft)}
+  textarea.inp{resize:vertical;min-height:70px;line-height:1.5}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* ---------- notes ---------- */
+  .note-item{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--white);margin-bottom:10px}
+  .note-item.unc{border-left:4px solid var(--red)}
+  .note-item.prog{border-left:4px solid var(--amber)}
+  .note-item.done{opacity:.75}
+  .note-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.76rem}
+  .note-text{font-size:.86rem;margin-top:6px;white-space:pre-wrap;word-break:break-word}
+  .note-text.clip{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+  .note-meta{font-size:.7rem;color:var(--ink-soft);margin-top:6px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:auto}
+  .seg button{border:none;background:#fff;font-size:.72rem;padding:4px 10px;cursor:pointer;color:var(--ink-soft)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on.unc{background:var(--red);color:#fff}
+  .seg button.on.prog{background:var(--amber);color:#fff}
+  .seg button.on.done{background:var(--teal);color:#fff}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 14px;font-size:.78rem;cursor:pointer}
+  .tab.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+
+  /* ---------- import / original list (STEP) ---------- */
+  .step-label{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:700;background:var(--orange-soft);color:var(--orange-deep);border:1px solid #F7CBA3;border-radius:999px;padding:2px 12px;margin-bottom:10px}
+  section.step{margin-bottom:24px}
+  .dropzone{background:var(--white);border:2px dashed #D9D8C8;border-radius:var(--radius);padding:30px 20px;text-align:center;cursor:pointer;transition:.15s}
+  .dropzone:hover,.dropzone.drag{border-color:var(--orange);background:var(--orange-soft)}
+  .dropzone.loaded{border-style:solid;border-color:var(--leaf);background:var(--leaf-soft)}
+  .dropzone .dz-icon{color:var(--orange)}
+  .dropzone .dz-icon .ico{width:34px;height:34px}
+  .dropzone .dz-title{font-weight:700;margin-top:6px}
+  .dropzone .dz-hint{font-size:.78rem;color:var(--ink-soft);margin-top:4px}
+  .dropzone .dz-file{font-size:.82rem;margin-top:8px;font-weight:700;color:var(--green);word-break:break-all}
+  .dropzone input{display:none}
+  .report{margin-top:14px}
+  .report table{border-collapse:collapse;width:100%;font-size:.8rem}
+  .report th,.report td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  .report th{color:var(--ink-soft);font-weight:700;background:#FDFCF6}
+  .okmark{color:var(--teal-ink);font-weight:700}
+  .ngmark{color:var(--red-ink);font-weight:700}
+  .period-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .f-group{display:flex;flex-direction:column;gap:4px}
+  .f-group label{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
+  .f-group input[type=date],.f-group input[type=search],.f-group select{font-size:.9rem;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .f-group input:focus,.f-group select:focus{outline:2px solid var(--orange-soft);border-color:var(--orange)}
+  .quick-btns{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:.75rem;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink-soft);transition:.15s}
+  .chip:hover{border-color:var(--orange);color:var(--orange-deep)}
+  .hit-count{font-size:.85rem;font-weight:700;color:var(--orange-deep);background:var(--orange-soft);border-radius:10px;padding:8px 14px}
+  .notice{border-radius:10px;padding:10px 14px;font-size:.82rem;margin-top:12px}
+  .notice.dup{background:var(--amber-soft);color:var(--amber-ink)}
+  .notice.err{background:var(--red-soft);color:var(--red-ink)}
+  .notice.info{background:var(--leaf-soft);color:var(--green)}
+  .tbl-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+  .tbl-bar .grow{flex:1}
+  .tbl-bar .info{font-size:.82rem;color:var(--ink-soft)}
+  .table-wrap{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+  table.edit{border-collapse:collapse;width:100%;min-width:980px;font-size:.85rem}
+  table.edit thead th{background:#F3F7EC;color:var(--ink);font-weight:700;text-align:left;padding:10px 12px;white-space:nowrap;user-select:none;position:sticky;top:0;z-index:5}
+  table.edit thead th.sortable{cursor:pointer}
+  table.edit thead th.sortable:hover{color:var(--orange-deep)}
+  table.edit thead th .arrow{font-size:.7rem;color:var(--orange-deep)}
+  table.edit tbody td{padding:6px 10px;border-top:1px solid var(--line);vertical-align:middle}
+  table.edit tbody tr:hover{background:#FFFBF2}
+  table.edit tbody tr.excluded{opacity:.42;background:repeating-linear-gradient(45deg,#fff,#fff 8px,#F6F5EE 8px,#F6F5EE 16px)}
+  table.edit tbody tr.excluded td[contenteditable]{text-decoration:line-through}
+  table.edit tbody tr.hl-red td:nth-child(2){color:var(--red-ink);font-weight:700}
+  td[contenteditable]{min-width:70px;border-radius:6px;outline:none}
+  td[contenteditable]:hover{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+  td[contenteditable]:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--orange)}
+  td.num-col{color:var(--ink-soft);text-align:right;width:44px}
+  td.ctrl-col{white-space:nowrap;width:70px}
+  .btn-mini{font-size:.72rem;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;color:var(--ink-soft)}
+  .btn-mini:hover{border-color:var(--red);color:var(--red)}
+  .dup-mark{display:inline-block;font-size:.68rem;font-weight:700;color:var(--amber-ink);background:var(--amber-soft);border-radius:999px;padding:0 8px;margin-left:6px}
+  .empty-msg{text-align:center;color:var(--ink-soft);padding:34px}
+  .out-area{text-align:center;margin-top:22px}
+  .note{font-size:.75rem;color:var(--ink-soft);margin-top:8px}
+  .colpick{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.82rem;margin:8px 0 14px}
+  .colpick label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .colpick input{accent-color:var(--orange);width:16px;height:16px}
+
+  /* ---------- hospitals ---------- */
+  .h-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+  .h-item{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:.84rem}
+  .h-item:last-child{border-bottom:none}
+  .h-item .hn{font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .h-item .hd{font-size:.74rem;color:var(--ink-soft);grid-column:1/-1;display:flex;gap:14px;flex-wrap:wrap}
+  .unreg{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.82rem;flex-wrap:wrap}
+  .unreg .un{flex:1 1 140px;font-weight:700;word-break:break-all}
+  .unreg select{font-size:.76rem;border:1px solid var(--line);border-radius:8px;padding:4px 6px;max-width:150px;background:#fff}
+
+  /* ---------- misc ---------- */
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;font-size:.84rem;padding:10px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;z-index:90;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:calc(100% - 32px);text-align:center}
+  .toast.on{opacity:1;transform:translateX(-50%)}
+  .welcome{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;padding:30px}
+  .welcome img{width:150px}
+  .welcome h2{font-size:1.25rem;margin-bottom:6px;letter-spacing:.04em}
+  .welcome p{font-size:.86rem;color:var(--ink-soft);margin-bottom:14px}
+  .mob-only{display:none}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .attn-list .prow{min-height:54px}
+
+  @media (max-width:1180px){
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .plist.wide{--cols:minmax(150px,1.3fr) 110px 74px minmax(110px,1fr) 92px 22px}
+    .plist.wide .c-addr,.plist.wide .c-phone{display:none}
+  }
+  @media (max-width:1020px){
+    .dash-grid,.h-grid,.two{grid-template-columns:1fr}
+  }
+  @media (max-width:900px){
+    :root{--side:0px}
+    .side{width:262px;transform:translateX(-100%);transition:transform .2s}
+    .side.on{transform:none;box-shadow:8px 0 30px rgba(0,0,0,.2)}
+    #menuBtn{display:inline-flex}
+    header.top{padding:10px 14px}
+    header.top h1{display:none}
+    header.top .m-brand{display:flex}
+    .staff .nm{display:none}
+    .staff{padding:4px}
+    .content{padding:16px 14px 50px}
+    .stats{gap:10px}
+    .stat{padding:12px;gap:10px}
+    .stat .si{width:38px;height:38px}
+    .stat .si .ico{width:21px;height:21px}
+    .stat .sv{font-size:1.55rem}
+    .stat .ss{display:none}
+    .dash-map{display:none}
+    .mob-only{display:inline-flex}
+    .phead{display:none}
+    .plist .prow,.plist.wide .prow{grid-template-columns:1fr auto;grid-template-areas:"who due" "hosp hosp";padding:10px 14px;gap:4px 10px}
+    .prow .c-who{grid-area:who}
+    .prow .c-due{grid-area:due;text-align:right}
+    .prow .c-hosp{grid-area:hosp;font-size:.72rem;color:var(--ink-soft);padding-left:44px}
+    .prow .c-addr,.prow .c-note,.prow .c-phone,.prow .c-days,.prow .c-st,.prow .chev{display:none}
+    .welcome{grid-template-columns:1fr;text-align:center;padding:22px}
+    .welcome img{margin:0 auto;width:110px}
+    .fbar .sel{flex:1 1 calc(50% - 10px)}
+    .fbar .sel select{max-width:none;width:100%}
+    .mapbox.big{height:calc(100vh - 260px)}
+    .list-meta .sortinfo{margin-left:0;width:100%}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c1.9.7 3.2 2.6 3.5 5.2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-hosp" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 7v6M9 10h6"/><path d="M9 21v-4h6v4"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11h6M9 15h4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.6M12 17h.01"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-max" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-ul" viewBox="0 0 24 24"><path d="M12 17V5M7 10l5-5 5 5M5 21h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15"/><path d="M5 19 13 11"/></symbol>
+</svg>
+
+<aside class="side" id="side" aria-label="メインメニュー">
+  <div class="brand">
+    <div class="logo-badge"><img src="logo.png" alt="子育て支援株式会社 ロゴ" width="96" height="99"></div>
+    <div class="app">子育てタクシー<br>利用者管理システム</div>
+  </div>
+  <nav id="nav">
+    <button class="nav-btn" data-v="dashboard"><svg class="ico"><use href="#i-home"/></svg>ダッシュボード</button>
+    <button class="nav-btn" data-v="users"><svg class="ico"><use href="#i-users"/></svg>利用者一覧</button>
+    <button class="nav-btn" data-v="map"><svg class="ico"><use href="#i-pin"/></svg>マップ表示</button>
+    <button class="nav-btn" data-v="hosp"><svg class="ico"><use href="#i-hosp"/></svg>医療機関連携</button>
+    <button class="nav-btn" data-v="notes"><svg class="ico"><use href="#i-clip"/></svg>申し送り・要確認<span class="cnt hidden" id="navNoteCnt"></span></button>
+    <button class="nav-btn" data-v="csv"><svg class="ico"><use href="#i-file"/></svg>CSV・Excel入出力</button>
+    <button class="nav-btn" data-v="settings"><svg class="ico"><use href="#i-gear"/></svg>設定</button>
+  </nav>
+  <div class="motto">
+    <svg width="64" height="40" viewBox="0 0 64 40" aria-hidden="true"><path d="M8 36C14 22 26 12 44 8" fill="none" stroke="#A8C96B" stroke-width="2" stroke-linecap="round"/><ellipse cx="20" cy="22" rx="7" ry="3.5" transform="rotate(-40 20 22)" fill="#A8C96B"/><ellipse cx="31" cy="14" rx="7" ry="3.5" transform="rotate(-25 31 14)" fill="#A8C96B" opacity=".8"/><ellipse cx="25" cy="30" rx="6" ry="3" transform="rotate(20 25 30)" fill="#F28C38" opacity=".85"/><ellipse cx="44" cy="9" rx="6" ry="3" transform="rotate(-10 44 9)" fill="#A8C96B" opacity=".6"/></svg>
+    子育てを<br>みんなで支える<br>地域の輪
+  </div>
+</aside>
+
+<div class="main">
+  <header class="top">
+    <button class="icon-btn" id="menuBtn" aria-label="メニューを開く"><svg class="ico l"><use href="#i-menu"/></svg></button>
+    <div class="m-brand"><img src="logo.png" alt=""><b>子育てタクシー<br>利用者管理</b></div>
+    <h1 id="pageTitle"><svg class="ico"><use href="#i-home"/></svg><span>ダッシュボード</span></h1>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="bellBtn" aria-label="要確認の項目"><svg class="ico l"><use href="#i-bell"/></svg><span class="dot hidden" id="bellCnt"></span></button>
+    <button class="staff" id="staffBtn" title="担当者名を設定"><span class="av"><svg class="ico s"><use href="#i-user"/></svg></span><span class="nm" id="staffName">担当者未設定</span></button>
+  </header>
+
+  <div class="content">
+
+    <!-- ================= ダッシュボード ================= -->
+    <div class="view" id="v-dashboard">
+      <div id="dashEmpty" class="panel welcome">
+        <img src="logo.png" alt="">
+        <div>
+          <h2>地域の子どもたちの安心を、みんなでつなぐ。</h2>
+          <p>はじめに、お客様情報（フォーム回答）のExcelまたはCSVを読み込んでください。<br>データはこのブラウザ内だけで処理され、サーバーには保存・送信されません。</p>
+          <button class="btn btn-o btn-lg" data-go="csv"><svg class="ico"><use href="#i-ul"/></svg>ファイルを読み込む</button>
+        </div>
+      </div>
+      <div id="dashBody" class="hidden">
+        <div class="stats" id="stats"></div>
+        <div class="fbar" data-filterbar></div>
+        <div class="chips" data-chips></div>
+        <div class="dash-grid">
+          <div class="panel">
+            <div class="list-meta" data-meta></div>
+            <div class="plist" id="dashList"></div>
+            <div class="pager" data-pager></div>
+          </div>
+          <div class="panel dash-map map-pane" id="dashMapPane">
+            <div class="panel-h">
+              <h2><svg class="ico"><use href="#i-pin"/></svg>利用者マップ</h2>
+              <span class="spacer"></span>
+              <div class="legend"><span><i style="background:var(--red)"></i>7日以内</span><span><i style="background:var(--amber)"></i>8〜30日</span><span><i style="background:var(--teal)"></i>31日以上</span><span><i style="background:var(--grey)"></i>未登録等</span></div>
+            </div>
+            <div class="panel-b">
+              <div class="mapbox" id="dashMap"></div>
+              <div class="actions" style="margin-top:10px;align-items:center">
+                <button class="btn btn-w btn-s" data-geo><svg class="ico s"><use href="#i-pin"/></svg>位置情報を取得</button>
+                <button class="btn btn-w btn-s" data-fs="dashMapPane"><svg class="ico s"><use href="#i-max"/></svg>大きく表示</button>
+                <span class="geo-progress" data-geostat></span>
+              </div>
+              <div id="dashSel"></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px" class="mob-only"><button class="btn btn-o" data-go="map" style="width:100%"><svg class="ico"><use href="#i-pin"/></svg>マップで見る</button></div>
+      </div>
+    </div>
+
+    <!-- ================= 利用者一覧 ================= -->
+    <div class="view hidden" id="v-users">
+      <div data-needdata></div>
+      <div class="needs-data">
+        <div class="fbar" data-filterbar></div>
+        <div class="chips" data-chips></div>
+        <div class="panel">
+          <div class="list-meta" data-meta></div>
+          <div class="plist wide" id="userList"></div>
+          <div class="pager" data-pager></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= マップ ================= -->
+    <div class="view hidden" id="v-map">
+      <div data-needdata></div>
+      <div class="needs-data">
+        <div class="fbar" data-filterbar></div>
+        <div class="chips" data-chips></div>
+        <div class="panel map-pane" id="bigMapPane">
+          <div class="panel-h">
+            <h2><svg class="ico"><use href="#i-pin"/></svg>利用者マップ</h2>
+            <div class="legend"><span><i style="background:var(--red)"></i>7日以内</span><span><i style="background:var(--amber)"></i>8〜30日</span><span><i style="background:var(--teal)"></i>31日以上</span><span><i style="background:var(--grey)"></i>未登録・超過</span></div>
+            <span class="spacer"></span>
+            <button class="btn btn-w btn-s" data-geo><svg class="ico s"><use href="#i-pin"/></svg>位置情報を取得</button>
+            <button class="btn btn-w btn-s" data-fs="bigMapPane"><svg class="ico s"><use href="#i-max"/></svg>全画面</button>
+          </div>
+          <div class="panel-b">
+            <div class="mapbox big" id="bigMap"></div>
+            <div class="geo-progress" data-geostat style="margin-top:8px"></div>
+            <div id="bigSel"></div>
+            <div id="noGeo" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 医療機関 ================= -->
+    <div class="view hidden" id="v-hosp">
+      <div class="h-grid">
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-hosp"/></svg>医療機関マスタ</h2><span class="muted small" id="hospCount"></span><span class="spacer"></span>
+            <div class="search" style="flex:0 1 220px;min-height:36px"><svg class="ico s"><use href="#i-search"/></svg><input id="hq" placeholder="医療機関を検索"></div>
+          </div>
+          <div id="hospList"></div>
+        </div>
+        <div>
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-h"><h2 id="hFormTitle"><svg class="ico"><use href="#i-plus"/></svg>医療機関を登録</h2></div>
+            <form class="panel-b" id="hForm" autocomplete="off">
+              <input type="hidden" id="hId">
+              <div class="field"><label for="hName">医療機関名 *</label><input class="inp" id="hName" required maxlength="80"></div>
+              <div class="field"><label for="hAlias">別名・表記ゆれ（読点・カンマ区切り）</label><input class="inp" id="hAlias" maxlength="300" placeholder="例：杉並産婦人科医院、すぎなみ産婦人科"></div>
+              <div class="field"><label for="hAddr">住所</label><input class="inp" id="hAddr" maxlength="120"></div>
+              <div class="field"><label for="hTel">電話番号</label><input class="inp" id="hTel" maxlength="20" inputmode="tel"></div>
+              <div class="field"><label for="hMemo">管理用メモ</label><textarea class="inp" id="hMemo" maxlength="500"></textarea></div>
+              <div class="actions"><button class="btn btn-o" type="submit">保存</button><button class="btn btn-w hidden" type="button" id="hCancel">キャンセル</button></div>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="panel-h"><h2><svg class="ico"><use href="#i-alert"/></svg>マスタ未登録の産院名</h2><span class="spacer"></span><button class="btn btn-g btn-s" id="hRegAll">すべて登録</button></div>
+            <div class="panel-b" id="unregList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 申し送り ================= -->
+    <div class="view hidden" id="v-notes">
+      <div class="two">
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-clip"/></svg>申し送り</h2><span class="spacer"></span>
+            <div class="tabs" id="noteTabs">
+              <button class="tab on" data-ns="open">未完了</button>
+              <button class="tab" data-ns="未確認">未確認</button>
+              <button class="tab" data-ns="対応中">対応中</button>
+              <button class="tab" data-ns="確認済み">確認済み</button>
+              <button class="tab" data-ns="all">すべて</button>
+            </div>
+          </div>
+          <div class="panel-b">
+            <details id="noteAddBox" style="margin-bottom:14px">
+              <summary class="btn btn-w btn-s" style="list-style:none;display:inline-flex"><svg class="ico s"><use href="#i-plus"/></svg>申し送りを追加</summary>
+              <form id="noteAddForm" style="margin-top:12px" autocomplete="off">
+                <div class="field"><label for="naWho">対象の利用者 *</label><input class="inp" id="naWho" list="peopleDL" placeholder="氏名で検索して選択" required></div>
+                <div class="field"><label for="naText">内容 *</label><textarea class="inp" id="naText" required maxlength="1000"></textarea></div>
+                <div class="row2">
+                  <div class="field"><label for="naPri">優先度</label><select class="inp" id="naPri"><option>高</option><option selected>中</option><option>低</option></select></div>
+                  <div class="field"><label for="naAs">担当者</label><input class="inp" id="naAs" maxlength="30"></div>
+                </div>
+                <button class="btn btn-o btn-s" type="submit">追加</button>
+              </form>
+            </details>
+            <div id="noteList"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-alert"/></svg>確認が必要な利用者</h2></div>
+          <div class="plist attn-list" id="attnList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CSV / Excel 入出力（既存機能） ================= -->
+    <div class="view hidden" id="v-csv">
+      <!-- STEP 1 -->
+      <section class="step">
+        <span class="step-label"><svg class="ico s"><use href="#i-ul"/></svg>STEP 1　お客様情報をアップロード</span>
+        <div class="dropzone" id="dz" tabindex="0" role="button" aria-label="お客様情報ファイルをアップロード">
+          <div class="dz-icon"><svg class="ico"><use href="#i-file"/></svg></div>
+          <div class="dz-title">お客様情報（フォーム回答）のExcel / CSVをここへ</div>
+          <div class="dz-hint">ドラッグ＆ドロップ、またはクリックして選択（.xlsx / .xls / .csv　UTF-8・Shift_JIS対応）</div>
+          <div class="dz-file" id="fileName"></div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        </div>
+        <div id="importReport" class="report hidden"></div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="step hidden" id="stepPeriod">
+        <span class="step-label"><svg class="ico s"><use href="#i-cal"/></svg>STEP 2　出産予定日の期間を指定</span>
+        <div class="panel panel-b">
+          <div class="period-row">
+            <div class="f-group"><label for="pFrom">開始日</label><input type="date" id="pFrom"></div>
+            <div class="f-group"><label for="pTo">終了日</label><input type="date" id="pTo"></div>
+            <div class="f-group">
+              <label>かんたん指定</label>
+              <div class="quick-btns">
+                <button class="chip" data-q="this15">今日から1ヶ月</button>
+                <button class="chip" data-q="nextm">来月まるごと</button>
+                <button class="chip" data-q="m15">15日〜翌月15日</button>
+              </div>
+            </div>
+            <div class="hit-count" id="hitCount">対象：0名</div>
+            <button class="btn btn-o" id="btnMake">リスト作成</button>
+          </div>
+          <div class="note">同じ方が複数回回答している場合は、最新の回答だけを自動で採用します。</div>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section class="step hidden" id="stepEdit">
+        <span class="step-label"><svg class="ico s"><use href="#i-edit"/></svg>STEP 3　内容を確認・編集</span>
+        <div id="dupNotice" class="notice dup hidden"></div>
+        <div class="tbl-bar" style="margin-top:12px">
+          <div class="search" style="flex:0 1 300px;min-height:38px"><svg class="ico s"><use href="#i-search"/></svg><input type="search" id="q" placeholder="氏名・電話・産院などで検索"></div>
+          <button class="btn btn-w btn-s" id="btnRestore">除外を全て戻す</button>
+          <span class="grow"></span>
+          <span class="info" id="tblInfo"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="edit">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th class="sortable" data-k="due">出産予定日 <span class="arrow" id="ar-due">▲</span></th>
+                <th class="sortable" data-k="name">氏名(漢字) <span class="arrow" id="ar-name"></span></th>
+                <th class="sortable" data-k="kana">氏名(フリガナ) <span class="arrow" id="ar-kana"></span></th>
+                <th>住所</th>
+                <th>電話番号</th>
+                <th class="sortable" data-k="hosp">産院名 <span class="arrow" id="ar-hosp"></span></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="note">セルをクリックすると直接書き換えられます。「除外」した行はリストに出力されません。列見出しクリックで並び替え（Excel出力にも反映）。予定日まで7日以内の方は日付が赤字になります。</div>
+        <div class="out-area">
+          <button class="btn btn-o btn-lg" id="btnDl"><svg class="ico"><use href="#i-dl"/></svg>出産予定リストをダウンロード</button>
+          <div class="note" id="dlNote"></div>
+        </div>
+      </section>
+
+      <!-- 利用者一覧の出力（追加） -->
+      <section class="step hidden" id="stepExport">
+        <span class="step-label"><svg class="ico s"><use href="#i-dl"/></svg>利用者一覧を出力（現在の検索・絞り込み結果）</span>
+        <div class="panel panel-b">
+          <div class="small muted">出力する列を選んでください。基本7列は出産予定リストと同じ列構成です。</div>
+          <div class="colpick" id="colPick"></div>
+          <div class="actions" style="align-items:center">
+            <button class="btn btn-g" id="btnCsv"><svg class="ico"><use href="#i-dl"/></svg>CSVで出力（Excel対応・BOM付きUTF-8）</button>
+            <button class="btn btn-w" id="btnXlsx"><svg class="ico"><use href="#i-dl"/></svg>Excelで出力</button>
+            <span class="small muted" id="expCount"></span>
+          </div>
+          <div class="note">CSVをExcelで開くと電話番号の先頭0が消える場合があります。電話番号を保持したい場合は「Excelで出力」をご利用ください。</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= 設定 ================= -->
+    <div class="view hidden" id="v-settings">
+      <div class="two">
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-user"/></svg>担当者</h2></div>
+          <form class="panel-b" id="cfgForm">
+            <div class="field"><label for="cfgStaff">担当者名（申し送りの記録者として使用）</label><input class="inp" id="cfgStaff" maxlength="30" placeholder="例：地域支援センター 山田"></div>
+            <button class="btn btn-o btn-s" type="submit">保存</button>
+          </form>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-lock"/></svg>データの取り扱い</h2></div>
+          <div class="panel-b small" style="line-height:1.9">
+            <p>・読み込んだお客様情報（氏名・住所・電話番号など）は<b>ブラウザのメモリ上のみ</b>で処理し、サーバーへ送信・保存しません。ページを閉じると消えます。</p>
+            <p>・申し送り・医療機関マスタ・地図の位置キャッシュは<b>この端末のブラウザ内</b>に保存されます。申し送りは利用者を特定できない識別キー（ハッシュ値）で紐付けています。</p>
+            <p>・「位置情報を取得」を押したときだけ、<b>住所のみ</b>を国土地理院の住所検索APIへ送信します（氏名・電話番号は送信しません）。</p>
+            <p>・共用PCでは作業後に下の「端末内データを消去」を実行してください。</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-dl"/></svg>バックアップ・復元</h2></div>
+          <div class="panel-b">
+            <p class="small muted" style="margin-bottom:12px">申し送り・医療機関マスタ・紐付け・位置キャッシュをファイルに保存し、別の端末へ移せます。</p>
+            <div class="actions">
+              <button class="btn btn-g btn-s" id="bkExport"><svg class="ico s"><use href="#i-dl"/></svg>バックアップを保存</button>
+              <label class="btn btn-w btn-s" style="cursor:pointer"><svg class="ico s"><use href="#i-ul"/></svg>バックアップから復元<input type="file" id="bkImport" accept=".json" class="sr"></label>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2><svg class="ico"><use href="#i-trash"/></svg>端末内データを消去</h2></div>
+          <div class="panel-b">
+            <p class="small muted" style="margin-bottom:12px" id="storeStat"></p>
+            <div class="actions">
+              <button class="btn btn-danger btn-s" data-clear="geo">位置キャッシュを消去</button>
+              <button class="btn btn-danger btn-s" data-clear="notes">申し送りを消去</button>
+              <button class="btn btn-danger btn-s" data-clear="all">すべて消去</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="privacy-note"><svg class="ico s"><use href="#i-lock"/></svg> 子育てタクシー 利用者管理システム — アップロードされたお客様情報は外部送信されません</div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="利用者詳細" aria-hidden="true"></aside>
+<datalist id="peopleDL"></datalist>
+<datalist id="hospDL"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   正規化ユーティリティ（既存）
+============================================================ */
+const zenMap = {'０':'0','１':'1','２':'2','３':'3','４':'4','５':'5','６':'6','７':'7','８':'8','９':'9','－':'-','ー':'-','―':'-'};
+const toHalf = s => String(s).replace(/[０-９－ー―]/g, c => zenMap[c] || c);
+
+function normPhone(v){
+  if (v === null || v === undefined || v === '') return '';
+  let s = toHalf(String(v)).replace(/\D/g,'');
+  if (!s) return '';
+  if (!s.startsWith('0') && (s.length === 9 || s.length === 10)) s = '0' + s;
+  return s;
+}
+function cleanName(v){ return v ? String(v).replace(/　/g,' ').trim() : ''; }
+function nameKey(v){ return v ? String(v).replace(/[\s　]/g,'') : ''; }
+function parseDate(v){
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === 'number'){
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return isNaN(d) ? null : d;
+  }
+  const s = toHalf(String(v)).trim()
+    .replace(/[年月]/g,'/').replace(/日/g,'').replace(/\./g,'/').replace(/-/g,'/');
+  const m = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+const dk = v => { const d = parseDate(v); return d ? d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate() : null; };
+const fmtDate = v => { const d = parseDate(v); return d ? `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` : (v?String(v):''); };
+const shortWareki = d => `’${String(d.getFullYear()).slice(2)}年${d.getMonth()+1}月${d.getDate()}日`;
+const yymmdd = d => `${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---- 追加ユーティリティ ---- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const ic = (id, cls='') => `<svg class="ico ${cls}"><use href="#i-${id}"/></svg>`;
+const nfkc = s => String(s ?? '').normalize('NFKC');
+const normH = s => nfkc(s).replace(/[\s　]/g,'').toLowerCase();
+const normA = s => nfkc(s).replace(/[\s　]+/g,' ').trim();
+const h53 = (str, seed=0) => {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++){ ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507); h1 ^= Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507); h2 ^= Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
+};
+const personKey = r => r.phone || (nameKey(r.name) + '|' + nameKey(r.kana));
+const pkeyOf = r => 'p' + h53(personKey(r));
+const geoKeyOf = addr => 'g' + h53(normA(addr));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const nowISO = () => new Date().toISOString();
+const fmtDT = iso => { if(!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const md = d => d ? `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}` : '—';
+const initial = n => (String(n||'').trim()[0] || '？');
+let toastTimer;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('on'), 2600); }
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); }; };
+
+/* 出産予定日のステータス（日付のみで計算） */
+function dueInfo(d){
+  if (!d) return {days:null, st:'none', label:'予定日未登録', weeks:null};
+  const t = new Date();
+  const a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const b = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+  const days = Math.round((a - b) / 86400000);
+  let st, label;
+  if (days < 0){ st = 'over'; label = '超過・要確認'; }
+  else if (days <= 7){ st = 'red'; label = '7日以内'; }
+  else if (days <= 30){ st = 'amber'; label = '8〜30日'; }
+  else { st = 'teal'; label = '31日以上'; }
+  const w = Math.floor((280 - days) / 7);
+  return {days, st, label, weeks: (days >= 0 && w >= 4 && w <= 42) ? w : null};
+}
+const ST_ICON = {red:'alert', amber:'clock', teal:'check', over:'alert', none:'q'};
+const badge = di => `<span class="badge b-${di.st}">${ic(ST_ICON[di.st])}${di.label}</span>`;
+const daysText = di => di.days === null ? '—' : di.days < 0 ? `${-di.days}日超過` : di.days === 0 ? '本日' : `あと${di.days}日`;
+
+/* ============================================================
+   端末内ストレージ（申し送り・医療機関マスタ・紐付け・位置キャッシュ）
+============================================================ */
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ toast('この端末に保存できませんでした（容量またはプライベートモード）'); return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} },
+};
+const DB = {
+  notes: LS.get('kt_notes', []),
+  hosp:  LS.get('kt_hosp', []),
+  links: LS.get('kt_links', {}),
+  geo:   LS.get('kt_geo', {}),
+  cfg:   LS.get('kt_cfg', {staff:''}),
+};
+const save = k => { LS.set('kt_' + k, DB[k]); if (k === 'hosp') hospIdx = null; };
+
+/* ============================================================
+   状態
+============================================================ */
+const state = {
+  raw: null,        // 全回答レコード（正規化済）
+  rows: null,       // 生成されたリスト行（編集対象）
+  sort: {key:'due', dir:1},
+  dupInfo: [],
+};
+const S = {
+  people: [], pmap: new Map(), fileName: '',
+  view: 'dashboard', selected: null,
+  f: {q:'', range:'all', hosp:'all', note:'all'},
+  us: {key:'due', dir:1},
+  page: 1, pageSize: 20,
+  noteTab: 'open',
+  maps: {},
+  pending: null,
+};
+
+/* 列の自動判定（ファーユの列名が多少変わっても対応） */
+const FIELDS = [
+  {key:'ts',    label:'タイムスタンプ',   pats:[/タイムスタンプ/, /回答日時/]},
+  {key:'name',  label:'氏名(漢字)',       pats:[/氏名（漢字）|氏名\(漢字\)/, /^氏名$/], req:true},
+  {key:'kana',  label:'氏名(フリガナ)',   pats:[/フリガナ/, /ふりがな/]},
+  {key:'addr',  label:'住所',             pats:[/^住所$/, /住所/]},
+  {key:'phone', label:'電話番号',         pats:[/電話番号/, /電話/]},
+  {key:'due',   label:'出産予定日',       pats:[/出産予定日/, /ご出産予定/], req:true},
+  {key:'hosp',  label:'産院名',           pats:[/^産院名$/, /産院名/, /産院|医療機関|病院/]},
+];
+function autoMap(headers){
+  const map = {};
+  FIELDS.forEach(f => {
+    let idx = -1;
+    for (const p of f.pats){
+      idx = headers.findIndex(h => p.test(String(h ?? '')));
+      if (idx >= 0) break;
+    }
+    map[f.key] = idx;
+  });
+  return map;
+}
+function detectSheet(wb){
+  let best = null, bestScore = -1;
+  wb.SheetNames.forEach(n => {
+    const ws = wb.Sheets[n];
+    if (!ws['!ref']) return;
+    const r = XLSX.utils.decode_range(ws['!ref']);
+    const score = (r.e.r - r.s.r + 1) * (r.e.c - r.s.c + 1);
+    if (score > bestScore){ bestScore = score; best = n; }
+  });
+  return best;
+}
+function findHeaderRow(aoa){
+  for (let i = 0; i < Math.min(10, aoa.length); i++){
+    const row = aoa[i].map(c => String(c ?? ''));
+    const hit = row.filter(c => /氏名|電話|フリガナ|予定日|産院/.test(c)).length;
+    if (hit >= 2) return i;
+  }
+  return 0;
+}
+
+/* ============================================================
+   STEP1: ファイル読み込み（Excel / CSV）＋ 取り込み前プレビュー
+============================================================ */
+const dz = document.getElementById('dz');
+const fileInput = document.getElementById('fileInput');
+dz.addEventListener('click', () => fileInput.click());
+dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();} });
+['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, e => {e.preventDefault();dz.classList.add('drag');}));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => {e.preventDefault();dz.classList.remove('drag');}));
+dz.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+fileInput.addEventListener('change', () => { handleFile(fileInput.files[0]); fileInput.value = ''; });
+
+function decodeText(buf){
+  const u8 = new Uint8Array(buf);
+  try { return {text: new TextDecoder('utf-8', {fatal:true}).decode(u8).replace(/^﻿/,''), enc:'UTF-8'}; }
+  catch(e){ return {text: new TextDecoder('shift_jis').decode(u8), enc:'Shift_JIS'}; }
+}
+
+async function handleFile(file){
+  if (!file) return;
+  if (!/\.(xlsx|xls|csv)$/i.test(file.name)){
+    alert('Excelファイル（.xlsx / .xls）またはCSVファイル（.csv）を選択してください'); return;
+  }
+  if (typeof XLSX === 'undefined'){ alert('読み込み用ライブラリを取得できませんでした。ネットワーク接続をご確認ください。'); return; }
+  try{
+    const buf = await file.arrayBuffer();
+    let wb, enc = '';
+    if (/\.csv$/i.test(file.name)){
+      const d = decodeText(buf); enc = d.text ? d.enc : '';
+      wb = XLSX.read(d.text, {type:'string', cellDates:true, raw:true});
+    } else {
+      wb = XLSX.read(buf, {type:'array', cellDates:true});
+    }
+    const sheetName = detectSheet(wb);
+    const sheet = wb.Sheets[sheetName];
+    const aoa = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null});
+    if (!aoa.length){ alert('データが見つかりませんでした。'); return; }
+    const hi = findHeaderRow(aoa);
+    const headers = aoa[hi].map(h => String(h ?? '').trim());
+    const map = autoMap(headers);
+    if (map.name < 0 || map.due < 0){
+      alert('「氏名」または「出産予定日」の列が見つかりませんでした。ファイルをご確認ください。');
+      return;
+    }
+    const g = (r,k) => map[k] >= 0 ? r[map[k]] : null;
+    const issues = [];
+    const recs = [];
+    aoa.slice(hi+1).forEach((r, i) => {
+      const line = hi + 2 + i;
+      if (!r.some(c => c !== null && c !== '')) return;
+      const rec = {
+        ts:    parseDate(g(r,'ts')),
+        name:  cleanName(g(r,'name')),
+        kana:  cleanName(g(r,'kana')),
+        addr:  cleanName(g(r,'addr')),
+        phone: normPhone(g(r,'phone')),
+        due:   parseDate(g(r,'due')),
+        hosp:  cleanName(g(r,'hosp')),
+      };
+      if (!rec.name){ issues.push({line, why:'氏名が空欄のため読み込みません', skip:true}); return; }
+      const rawDue = g(r,'due');
+      if (rec.due && (rec.due.getFullYear() < 2000 || rec.due.getFullYear() > 2100)){
+        issues.push({line, name:rec.name, why:`出産予定日「${fmtDate(rec.due)}」が範囲外のため未登録扱い`}); rec.due = null;
+      } else if (!rec.due && rawDue !== null && rawDue !== ''){
+        issues.push({line, name:rec.name, why:`出産予定日「${String(rawDue)}」を日付として読めないため未登録扱い`});
+      } else if (!rec.due){
+        issues.push({line, name:rec.name, why:'出産予定日が空欄（未登録として表示）'});
+      }
+      if (map.phone >= 0 && !rec.phone) issues.push({line, name:rec.name, why:'電話番号が空欄（重複判定は氏名＋フリガナで行います）'});
+      recs.push(rec);
+    });
+    const {out, removed} = dedupe(recs);
+    S.pending = {file: file.name, recs, map, headers, issues, removed, uniq: out.length, enc, sheetName};
+    showImportReport();
+  }catch(e){
+    console.error(e);
+    alert('ファイルの読み込みに失敗しました。形式をご確認ください。');
+  }
+}
+
+function showImportReport(){
+  const P = S.pending, box = $('#importReport');
+  const colRows = FIELDS.map(f => {
+    const idx = P.map[f.key];
+    return `<tr><td>${esc(f.label)}${f.req?' *':''}</td><td>${idx >= 0 ? `<span class="okmark">✔</span> ${esc(P.headers[idx])}` : `<span class="${f.req?'ngmark':'muted'}">見つかりません</span>`}</td></tr>`;
+  }).join('');
+  const iss = P.issues.slice(0, 50).map(x => `<tr><td>${x.line}行目</td><td>${esc(x.name||'')}</td><td>${esc(x.why)}</td></tr>`).join('');
+  const reloading = state.raw ? `<div class="notice info">現在のデータ（${S.people.length}名）を置き換えます。申し送り・医療機関の紐付けは識別キーで引き継がれます（データの追記・上書き登録はしません）。</div>` : '';
+  box.innerHTML = `
+    <div class="panel">
+      <div class="panel-h"><h2>${ic('file')}取り込み前の確認：${esc(P.file)}</h2><span class="muted small">${P.enc ? '文字コード：' + P.enc + '　' : ''}シート：${esc(P.sheetName)}</span></div>
+      <div class="panel-b">
+        <div class="stats" style="margin-bottom:12px">
+          <div class="stat g" style="cursor:default"><div><div class="sl">回答件数</div><div class="sv">${P.recs.length}<small>件</small></div></div></div>
+          <div class="stat t" style="cursor:default"><div><div class="sl">利用者（重複整理後）</div><div class="sv">${P.uniq}<small>名</small></div></div></div>
+          <div class="stat a" style="cursor:default"><div><div class="sl">重複回答（最新のみ採用）</div><div class="sv">${P.removed}<small>件</small></div></div></div>
+          <div class="stat r" style="cursor:default"><div><div class="sl">要確認の行</div><div class="sv">${P.issues.length}<small>件</small></div></div></div>
+        </div>
+        <div class="two">
+          <div><div class="sec-t">列の対応</div><table><thead><tr><th>項目</th><th>ファイルの列</th></tr></thead><tbody>${colRows}</tbody></table></div>
+          <div><div class="sec-t">要確認の行${P.issues.length > 50 ? '（先頭50件）' : ''}</div>${P.issues.length ? `<div style="max-height:260px;overflow:auto"><table><thead><tr><th>行</th><th>氏名</th><th>内容</th></tr></thead><tbody>${iss}</tbody></table></div>` : '<p class="small muted">問題のある行はありません。</p>'}</div>
+        </div>
+        ${reloading}
+        <div class="actions" style="margin-top:14px">
+          <button class="btn btn-o" id="impOk">${ic('check')}この内容で読み込む</button>
+          <button class="btn btn-w" id="impCancel">キャンセル</button>
+        </div>
+      </div>
+    </div>`;
+  box.classList.remove('hidden');
+  $('#impOk').onclick = commitImport;
+  $('#impCancel').onclick = () => { S.pending = null; box.classList.add('hidden'); };
+  box.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function commitImport(){
+  const P = S.pending; if (!P) return;
+  state.raw = P.recs;
+  S.fileName = P.file;
+  S.pending = null;
+  buildPeople();
+  $('#importReport').classList.add('hidden');
+  dz.classList.add('loaded');
+  document.getElementById('fileName').textContent = `✔ ${P.file}（${state.raw.length}件の回答・${S.people.length}名）`;
+  document.getElementById('stepPeriod').classList.remove('hidden');
+  document.getElementById('stepExport').classList.remove('hidden');
+  state.rows = null; document.getElementById('stepEdit').classList.add('hidden');
+  suggestPeriod();
+  updateHitCount();
+  S.page = 1;
+  renderAll();
+  toast(`${S.people.length}名の利用者を読み込みました`);
+  document.getElementById('stepPeriod').scrollIntoView({behavior:'smooth'});
+}
+
+function buildPeople(){
+  const {out} = dedupe(state.raw);
+  S.people = out.map(r => ({...r, pk: pkeyOf(r)}));
+  S.pmap = new Map(S.people.map(p => [p.pk, p]));
+  $('#peopleDL').innerHTML = S.people.map(p => `<option value="${esc(p.name)}（${esc(fmtDate(p.due) || '予定日未登録')}）">`).join('');
+}
+
+/* ============================================================
+   STEP2: 期間指定（既存）
+============================================================ */
+const pFrom = document.getElementById('pFrom');
+const pTo   = document.getElementById('pTo');
+function toInput(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function suggestPeriod(){
+  const t = new Date();
+  let from, to;
+  if (t.getDate() >= 15){ from = new Date(t.getFullYear(), t.getMonth(), 15); to = new Date(t.getFullYear(), t.getMonth()+1, 15); }
+  else { from = new Date(t.getFullYear(), t.getMonth()-1, 15); to = new Date(t.getFullYear(), t.getMonth(), 15); }
+  pFrom.value = toInput(from); pTo.value = toInput(to);
+}
+document.querySelectorAll('.chip[data-q]').forEach(b => b.addEventListener('click', () => {
+  const t = new Date();
+  let from, to;
+  if (b.dataset.q === 'this15'){ from = t; to = new Date(t.getFullYear(), t.getMonth()+1, t.getDate()); }
+  else if (b.dataset.q === 'nextm'){ from = new Date(t.getFullYear(), t.getMonth()+1, 1); to = new Date(t.getFullYear(), t.getMonth()+2, 0); }
+  else {
+    if (t.getDate() >= 15){ from = new Date(t.getFullYear(), t.getMonth(), 15); to = new Date(t.getFullYear(), t.getMonth()+1, 15); }
+    else { from = new Date(t.getFullYear(), t.getMonth()-1, 15); to = new Date(t.getFullYear(), t.getMonth(), 15); }
+  }
+  pFrom.value = toInput(from); pTo.value = toInput(to);
+  updateHitCount();
+}));
+[pFrom, pTo].forEach(el => el.addEventListener('change', updateHitCount));
+
+function dedupe(recs){
+  // 同一人物（電話番号、なければ氏名+カナ）は最新回答のみ採用
+  const sorted = [...recs].sort((a,b) => (b.ts?b.ts.getTime():0) - (a.ts?a.ts.getTime():0));
+  const seen = new Set(); const out = []; let removed = 0;
+  sorted.forEach(r => {
+    const k = personKey(r);
+    if (seen.has(k)){ removed++; return; }
+    seen.add(k); out.push(r);
+  });
+  return {out, removed};
+}
+function filterByPeriod(){
+  const f = pFrom.value.replaceAll('-',''), t = pTo.value.replaceAll('-','');
+  if (!state.raw || !f || !t) return [];
+  return S.people.filter(r => {
+    const k = dk(r.due);
+    return k && k >= +f && k <= +t;
+  });
+}
+function updateHitCount(){
+  document.getElementById('hitCount').textContent = `対象：${filterByPeriod().length}名`;
+}
+
+/* ============================================================
+   STEP3: リスト生成・編集（既存）
+============================================================ */
+document.getElementById('btnMake').addEventListener('click', () => {
+  const recs = filterByPeriod();
+  if (!recs.length){
+    alert('指定した期間に出産予定日が入る方がいませんでした。期間を変更してください。');
+    return;
+  }
+  state.rows = recs
+    .slice()
+    .sort((a,b) => (dk(a.due)||0) - (dk(b.due)||0) || String(a.kana).localeCompare(String(b.kana),'ja'))
+    .map((r,i) => ({
+      id: i,
+      name: r.name, kana: r.kana, addr: r.addr,
+      phone: r.phone, due: r.due, hosp: r.hosp,
+      excluded: false,
+    }));
+  state.sort = {key:'due', dir:1};
+  const nameCnt = {};
+  state.rows.forEach(r => { const k = nameKey(r.name); nameCnt[k] = (nameCnt[k]||0)+1; });
+  state.dupInfo = Object.entries(nameCnt).filter(([,c]) => c > 1).map(([k]) => k);
+  document.getElementById('stepEdit').classList.remove('hidden');
+  renderTable();
+  document.getElementById('stepEdit').scrollIntoView({behavior:'smooth'});
+});
+
+function sortedRows(){
+  const {key, dir} = state.sort;
+  return [...state.rows].sort((a,b) => {
+    let va, vb;
+    if (key === 'due'){ va = dk(a.due)||0; vb = dk(b.due)||0; }
+    else { va = String(a[key]||''); vb = String(b[key]||''); }
+    const c = va > vb ? 1 : va < vb ? -1 : String(a.kana).localeCompare(String(b.kana),'ja');
+    return c * dir;
+  });
+}
+function renderTable(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const rows = sortedRows();
+  const tb = document.getElementById('tbody');
+  let visible = 0, no = 0;
+  tb.innerHTML = rows.map(r => {
+    const hay = [r.name,r.kana,r.phone,r.addr,r.hosp].join(' ').toLowerCase();
+    if (q && !hay.includes(q)) return '';
+    visible++;
+    if (!r.excluded) no++;
+    const dupMark = state.dupInfo.includes(nameKey(r.name)) ? '<span class="dup-mark">同名注意</span>' : '';
+    const hl = dueInfo(parseDate(r.due)).st === 'red' ? 'hl-red' : '';
+    return `<tr class="${r.excluded?'excluded':''} ${hl}" data-id="${r.id}">
+      <td class="num-col">${r.excluded?'—':no}</td>
+      <td contenteditable data-f="due">${esc(fmtDate(r.due))}</td>
+      <td contenteditable data-f="name">${esc(r.name)}${dupMark}</td>
+      <td contenteditable data-f="kana">${esc(r.kana)}</td>
+      <td contenteditable data-f="addr">${esc(r.addr)}</td>
+      <td contenteditable data-f="phone">${esc(r.phone)}</td>
+      <td contenteditable data-f="hosp">${esc(r.hosp)}</td>
+      <td class="ctrl-col"><button class="btn-mini" data-act="tgl">${r.excluded?'戻す':'除外'}</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty-msg">該当する行がありません</td></tr>`;
+
+  const active = state.rows.filter(r => !r.excluded).length;
+  const excluded = state.rows.length - active;
+  document.getElementById('tblInfo').textContent = `出力対象 ${active}名` + (excluded ? `（除外 ${excluded}名）` : '');
+  document.getElementById('dlNote').textContent = `期間：${fmtDate(pFrom.value)} 〜 ${fmtDate(pTo.value)}　／　${active}名を出力します`;
+  const dn = document.getElementById('dupNotice');
+  if (state.dupInfo.length){
+    dn.classList.remove('hidden');
+    dn.textContent = '⚠ 同じ氏名の方が複数います。別人かどうかご確認ください：' + state.dupInfo.join('、');
+  } else dn.classList.add('hidden');
+  ['due','name','kana','hosp'].forEach(k => {
+    document.getElementById('ar-'+k).textContent = state.sort.key === k ? (state.sort.dir > 0 ? '▲' : '▼') : '';
+  });
+}
+document.getElementById('tbody').addEventListener('focusout', e => {
+  const td = e.target.closest('td[contenteditable]');
+  if (!td) return;
+  const tr = td.closest('tr');
+  const row = state.rows.find(r => r.id === +tr.dataset.id);
+  if (!row) return;
+  const f = td.dataset.f;
+  const v = td.textContent.replace(/同名注意/g,'').trim();
+  if (f === 'due'){
+    const d = parseDate(v);
+    if (d){ row.due = d; } else if (v === ''){ row.due = null; }
+    renderTable();
+  } else if (f === 'phone'){
+    row.phone = normPhone(v) || v;
+    renderTable();
+  } else {
+    row[f] = v;
+  }
+});
+document.getElementById('tbody').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.closest('td[contenteditable]')){ e.preventDefault(); e.target.blur(); }
+});
+document.getElementById('tbody').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act="tgl"]');
+  if (!btn) return;
+  const tr = btn.closest('tr');
+  const row = state.rows.find(r => r.id === +tr.dataset.id);
+  if (row){ row.excluded = !row.excluded; renderTable(); }
+});
+document.getElementById('btnRestore').addEventListener('click', () => { state.rows.forEach(r => r.excluded = false); renderTable(); });
+document.getElementById('q').addEventListener('input', renderTable);
+document.querySelectorAll('table.edit th.sortable').forEach(th => th.addEventListener('click', () => {
+  const k = th.dataset.k;
+  if (state.sort.key === k) state.sort.dir *= -1;
+  else state.sort = {key:k, dir:1};
+  renderTable();
+}));
+
+/* ============================================================
+   Excel出力（出産予定リスト書式を再現）（既存）
+============================================================ */
+document.getElementById('btnDl').addEventListener('click', () => {
+  const rows = sortedRows().filter(r => !r.excluded);
+  if (!rows.length){ alert('出力対象がありません（全員除外されています）'); return; }
+  const from = parseDate(pFrom.value), to = parseDate(pTo.value);
+  const aoa = [
+    [null, null, `出産予定月（${shortWareki(from)}～${shortWareki(to)}）`, null, null, null, null],
+    ['No.', '氏名(漢字)', '氏名(フリガナ)', '住所', '電話番号', '出産予定日', '産院名'],
+    ...rows.map((r,i) => [i+1, r.name, r.kana, r.addr, r.phone, r.due, r.hosp]),
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa, {cellDates:true});
+  ws['!cols'] = [{wch:5.6},{wch:15.9},{wch:21},{wch:64.8},{wch:14},{wch:13.4},{wch:44.4}];
+  rows.forEach((r,i) => {
+    const addr = XLSX.utils.encode_cell({r: i+2, c: 5});
+    if (ws[addr] && ws[addr].v instanceof Date) ws[addr].z = 'yyyy/mm/dd';
+    const pAddr = XLSX.utils.encode_cell({r: i+2, c: 4});
+    if (ws[pAddr]){ ws[pAddr].t = 's'; ws[pAddr].v = String(rows[i].phone ?? ''); }
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '出産予定リスト');
+  XLSX.writeFile(wb, `こうのとり_出産予定リスト_${yymmdd(from)}-${yymmdd(to)}.xlsx`, {cellDates:true});
+});
+
+/* ============================================================
+   医療機関マスタ
+============================================================ */
+let hospIdx = null;
+function hospIndex(){
+  if (hospIdx) return hospIdx;
+  hospIdx = new Map();
+  DB.hosp.forEach(h => {
+    hospIdx.set(normH(h.name), h.id);
+    (h.aliases||[]).forEach(a => { if (normH(a)) hospIdx.set(normH(a), h.id); });
+  });
+  $('#hospDL').innerHTML = DB.hosp.map(h => `<option value="${esc(h.name)}">`).join('');
+  return hospIdx;
+}
+const hospById = id => DB.hosp.find(h => h.id === id) || null;
+function matchHosp(text){ const k = normH(text); if (!k) return null; const id = hospIndex().get(k); return id ? hospById(id) : null; }
+function hospOf(p){
+  const id = DB.links[p.pk];
+  if (id){ const h = hospById(id); if (h) return h; }
+  return matchHosp(p.hosp);
+}
+function addHosp({name, aliases=[], addr='', tel='', memo=''}){
+  name = cleanName(name);
+  if (!name) return null;
+  const ex = matchHosp(name);
+  if (ex) return ex;
+  const h = {id:'h'+uid(), name, aliases, addr, tel, memo, ca:nowISO(), ua:nowISO()};
+  DB.hosp.push(h); save('hosp');
+  return h;
+}
+
+/* ============================================================
+   申し送り
+============================================================ */
+const NST = ['未確認','対応中','確認済み'];
+const NST_CLS = {'未確認':'unc','対応中':'prog','確認済み':'done'};
+let noteIdxCache = null;
+function noteIndex(){
+  if (noteIdxCache) return noteIdxCache;
+  noteIdxCache = new Map();
+  DB.notes.forEach(n => { if (!noteIdxCache.has(n.pk)) noteIdxCache.set(n.pk, []); noteIdxCache.get(n.pk).push(n); });
+  return noteIdxCache;
+}
+const notesOf = pk => noteIndex().get(pk) || [];
+const saveNotes = () => { noteIdxCache = null; save('notes'); };
+function confState(pk){
+  const ns = notesOf(pk);
+  if (!ns.length) return null;
+  if (ns.some(n => n.st === '未確認')) return '未確認';
+  if (ns.some(n => n.st === '対応中')) return '対応中';
+  return '確認済み';
+}
+const confTag = st => st ? `<span class="tag t-${NST_CLS[st]}">${st === '確認済み' ? ic('check','s') : ''}${st}</span>` : '<span class="tag t-nil">—</span>';
+function latestOpenNote(pk){
+  return notesOf(pk).filter(n => n.st !== '確認済み').sort((a,b) => (b.ua||'').localeCompare(a.ua||''))[0] || null;
+}
+function addNote(pk, text, pri, who){
+  const n = {id:'n'+uid(), pk, text:text.trim(), pri:pri||'中', st:'未確認', who:(who||'').trim(), by:DB.cfg.staff||'', ca:nowISO(), ua:nowISO()};
+  DB.notes.push(n); saveNotes(); return n;
+}
+function setNoteStatus(id, st){
+  const n = DB.notes.find(x => x.id === id); if (!n || n.st === st) return;
+  n.st = st; n.ua = nowISO(); n.by = DB.cfg.staff || ''; saveNotes();
+}
+const unconfirmedCount = () => DB.notes.filter(n => n.st === '未確認' && (!S.people.length || S.pmap.has(n.pk))).length;
+
+/* ============================================================
+   絞り込み・並び替え（利用者）
+============================================================ */
+const RANGE_OPTS = [['all','予定日：すべて'],['7','7日以内'],['30','30日以内'],['31','31日以上'],['over','予定日超過'],['none','予定日未登録'],['attn','日付要確認（超過・未登録）']];
+const NOTE_OPTS = [['all','申し送り：すべて'],['unconf','未確認あり'],['open','未完了あり'],['has','申し送りあり'],['nonote','申し送りなし']];
+function applyFilter(list){
+  const f = S.f, q = normH(f.q);
+  return list.filter(p => {
+    const di = dueInfo(p.due);
+    switch (f.range){
+      case '7': if (di.st !== 'red') return false; break;
+      case '30': if (di.days === null || di.days < 0 || di.days > 30) return false; break;
+      case '31': if (di.st !== 'teal') return false; break;
+      case 'over': if (di.st !== 'over') return false; break;
+      case 'none': if (di.st !== 'none') return false; break;
+      case 'attn': if (di.st !== 'over' && di.st !== 'none') return false; break;
+    }
+    if (f.hosp !== 'all'){
+      const h = hospOf(p);
+      if (f.hosp === 'none'){ if (h) return false; }
+      else if (!h || h.id !== f.hosp) return false;
+    }
+    if (f.note !== 'all'){
+      const ns = notesOf(p.pk);
+      if (f.note === 'unconf' && !ns.some(n => n.st === '未確認')) return false;
+      if (f.note === 'open' && !ns.some(n => n.st !== '確認済み')) return false;
+      if (f.note === 'has' && !ns.length) return false;
+      if (f.note === 'nonote' && ns.length) return false;
+    }
+    if (q){
+      const h = hospOf(p);
+      const hay = normH([p.name, p.kana, p.addr, p.phone, p.hosp, h ? h.name : '', ...notesOf(p.pk).map(n => n.text)].join(' '));
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+const USORT_LABEL = {due:'出産予定日', name:'フリガナ', hosp:'かかりつけ', addr:'住所'};
+function sortPeople(list){
+  const {key, dir} = S.us;
+  return [...list].sort((a,b) => {
+    if (key === 'due'){
+      const va = dk(a.due), vb = dk(b.due);
+      if (va === null && vb === null) return String(a.kana).localeCompare(String(b.kana),'ja');
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      return ((va - vb) || String(a.kana).localeCompare(String(b.kana),'ja')) * dir;
+    }
+    let va, vb;
+    if (key === 'name'){ va = a.kana || a.name; vb = b.kana || b.name; }
+    else if (key === 'hosp'){ const ha = hospOf(a), hb = hospOf(b); va = ha ? ha.name : (a.hosp||''); vb = hb ? hb.name : (b.hosp||''); }
+    else { va = a[key] || ''; vb = b[key] || ''; }
+    if (!va && vb) return 1; if (va && !vb) return -1;
+    return (String(va).localeCompare(String(vb),'ja') || (dk(a.due)||0) - (dk(b.due)||0)) * dir;
+  });
+}
+function currentList(){ return sortPeople(applyFilter(S.people)); }
+
+/* フィルターバー（ダッシュボード・利用者一覧・マップ共通） */
+function filterBarHTML(){
+  const hOpts = [['all','医療機関：すべて'], ...[...DB.hosp].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(h => [h.id, h.name]), ['none','医療機関未登録']];
+  const sel = (key, opts, icon, label) => `<label class="sel ${S.f[key] !== 'all' ? 'on' : ''}">${ic(icon,'s')}<span class="sr">${label}</span><select data-f="${key}">${opts.map(([v,l]) => `<option value="${esc(v)}" ${S.f[key]===v?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
+  return `<label class="search">${ic('search','s')}<span class="sr">検索</span><input type="search" data-f="q" value="${esc(S.f.q)}" placeholder="名前・住所・医療機関・特記事項で検索…"></label>
+    ${sel('range', RANGE_OPTS, 'cal', '予定日')}
+    ${sel('hosp', hOpts, 'hosp', '医療機関')}
+    ${sel('note', NOTE_OPTS, 'clip', '申し送り')}`;
+}
+function chipsHTML(){
+  const c = [];
+  if (S.f.q) c.push(['q', `検索：${S.f.q}`]);
+  if (S.f.range !== 'all') c.push(['range', RANGE_OPTS.find(o => o[0] === S.f.range)[1]]);
+  if (S.f.hosp !== 'all') c.push(['hosp', S.f.hosp === 'none' ? '医療機関未登録' : (hospById(S.f.hosp)?.name || '医療機関')]);
+  if (S.f.note !== 'all') c.push(['note', '申し送り：' + NOTE_OPTS.find(o => o[0] === S.f.note)[1]]);
+  if (!c.length) return '';
+  return `<span class="small muted">適用中：</span>` + c.map(([k,l]) => `<button class="fchip" data-clr="${k}">${esc(l)}${ic('x','s')}</button>`).join('') + `<button class="linkbtn" data-clr="all">すべて解除</button>`;
+}
+function setFilter(k, v){ S.f[k] = v; S.page = 1; renderCurrent(); }
+function clearFilters(k){
+  if (k === 'all') S.f = {q:'', range:'all', hosp:'all', note:'all'};
+  else S.f[k] = k === 'q' ? '' : 'all';
+  S.page = 1; renderCurrent(true);
+}
+document.addEventListener('change', e => {
+  const s = e.target.closest('[data-filterbar] select[data-f]');
+  if (s) setFilter(s.dataset.f, s.value);
+});
+const onSearch = debounce(v => { S.f.q = v; S.page = 1; renderCurrent(false); }, 150);
+document.addEventListener('input', e => {
+  const s = e.target.closest('[data-filterbar] input[data-f="q"]');
+  if (s) onSearch(s.value);
+});
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-clr]'); if (c){ clearFilters(c.dataset.clr); return; }
+  const g = e.target.closest('[data-go]'); if (g){ go(g.dataset.go); return; }
+  const sk = e.target.closest('.phead .sk');
+  if (sk){ const k = sk.dataset.k; if (S.us.key === k) S.us.dir *= -1; else S.us = {key:k, dir:1}; renderCurrent(); return; }
+  const pr = e.target.closest('.prow[data-pk]'); if (pr){ openDetail(pr.dataset.pk); return; }
+  const pg = e.target.closest('[data-page]'); if (pg){ S.page += +pg.dataset.page; renderCurrent(); return; }
+  const fs = e.target.closest('[data-fs]'); if (fs){ toggleFullscreen(fs.dataset.fs); return; }
+  const gb = e.target.closest('[data-geo]'); if (gb){ geocodeMissing(); return; }
+});
+document.addEventListener('change', e => {
+  const ps = e.target.closest('[data-pagesize]');
+  if (ps){ S.pageSize = +ps.value; S.page = 1; renderCurrent(); }
+});
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.prow[data-pk]')){ e.preventDefault(); openDetail(e.target.dataset.pk); }
+  if (e.key === 'Escape'){ if ($('#drawer').classList.contains('on')) closeDetail(); else closeSide(); }
+});
+
+/* 利用者リスト描画 */
+function rowHTML(p, wide){
+  const di = dueInfo(p.due), h = hospOf(p), on = latestOpenNote(p.pk), cs = confState(p.pk);
+  const stc = di.st === 'red' ? 'st-red' : di.st === 'over' ? 'st-over' : '';
+  const noteCell = on ? `<span class="tag pri-${on.pri}" title="${esc(on.text)}">${esc(on.text.slice(0, 8))}${on.text.length > 8 ? '…' : ''}</span>` : (notesOf(p.pk).length ? '<span class="tag t-done">確認済み</span>' : '<span class="tag t-nil">なし</span>');
+  const hospCell = h ? esc(h.name) : (p.hosp ? `<span title="マスタ未登録">${esc(p.hosp)}</span>` : '<span class="muted">未登録</span>');
+  return `<div class="prow ${stc} ${S.selected === p.pk ? 'sel' : ''}" data-pk="${p.pk}" tabindex="0" role="button" aria-label="${esc(p.name)}の詳細">
+    <div class="who c-who"><span class="av" aria-hidden="true">${esc(initial(p.name))}</span><div style="min-width:0"><div class="nm">${esc(p.name)}</div>${badge(di)}</div></div>
+    <div class="due c-due"><b>${p.due ? esc(fmtDate(p.due).slice(5)) : '—'}</b><div class="sub">${di.weeks ? `妊娠${di.weeks}週` : (wide ? '' : esc(daysText(di)))}</div></div>
+    ${wide ? `<div class="c-days"><span class="days ${di.st}">${esc(daysText(di))}</span></div>` : ''}
+    <div class="ell c-hosp">${hospCell}</div>
+    <div class="ell c-addr" title="${esc(p.addr)}">${esc(p.addr) || '<span class="muted">—</span>'}</div>
+    ${wide ? `<div class="ell c-phone">${esc(p.phone) || '<span class="muted">—</span>'}</div>` : ''}
+    <div class="c-note">${wide ? confTag(cs) : noteCell}</div>
+    <div class="chev">${ic('chev','s')}</div>
+  </div>`;
+}
+function headHTML(wide){
+  const sk = (k, l) => `<button class="sk ${S.us.key === k ? 'on' : ''}" data-k="${k}">${l}${S.us.key === k ? (S.us.dir > 0 ? ' ▲' : ' ▼') : ''}</button>`;
+  return `<div class="phead"><div>${sk('name','氏名')}</div><div>${sk('due','予定日')}</div>${wide ? '<div>残り日数</div>' : ''}<div>${sk('hosp','かかりつけ産婦人科')}</div><div class="c-addr">${sk('addr','住所')}</div>${wide ? '<div class="c-phone">電話番号</div>' : ''}<div>${wide ? '確認状態' : '特記事項'}</div><div></div></div>`;
+}
+function renderPeopleList(root, wide){
+  const list = currentList();
+  const view = root.closest('.view');
+  const total = list.length, ps = S.pageSize || total || 1;
+  const pages = Math.max(1, Math.ceil(total / ps));
+  if (S.page > pages) S.page = pages;
+  if (S.page < 1) S.page = 1;
+  const start = (S.page - 1) * ps, slice = list.slice(start, start + ps);
+  root.innerHTML = headHTML(wide) + (slice.map(p => rowHTML(p, wide)).join('') || `<div class="empty">${ic('search')}<br>条件に合う利用者がいません。<br><button class="linkbtn" data-clr="all">絞り込みを解除</button></div>`);
+  view.querySelector('[data-meta]').innerHTML = `<span>全 <b>${S.people.length}</b> 名中 <b>${total}</b> 名${total ? `（${start+1}〜${Math.min(start+ps, total)} を表示）` : ''}</span><span class="sortinfo">並び順：${USORT_LABEL[S.us.key]}${S.us.dir > 0 ? '（昇順）' : '（降順）'}</span>`;
+  view.querySelector('[data-pager]').innerHTML = `<label>表示件数 <select data-pagesize>${[20,50,100,0].map(n => `<option value="${n}" ${S.pageSize===n?'selected':''}>${n || '全件'}</option>`).join('')}</select></label>
+    <button class="btn btn-w btn-s" data-page="-1" ${S.page <= 1 ? 'disabled' : ''}>前へ</button><span>${S.page} / ${pages}</span><button class="btn btn-w btn-s" data-page="1" ${S.page >= pages ? 'disabled' : ''}>次へ</button>`;
+  return list;
+}
+function renderFilterBar(view, full){
+  const fb = view.querySelector('[data-filterbar]');
+  if (full || !fb.childElementCount) fb.innerHTML = filterBarHTML();
+  else { // 検索入力中はフォーカスを保つため検索欄以外を更新
+    fb.querySelectorAll('select[data-f]').forEach(s => { s.value = S.f[s.dataset.f]; s.closest('.sel').classList.toggle('on', S.f[s.dataset.f] !== 'all'); });
+    const qi = fb.querySelector('input[data-f="q"]'); if (qi && document.activeElement !== qi) qi.value = S.f.q;
+  }
+  view.querySelector('[data-chips]').innerHTML = chipsHTML();
+}
+
+/* ============================================================
+   画面描画
+============================================================ */
+const VIEWS = {
+  dashboard:['ダッシュボード','home'], users:['利用者一覧','users'], map:['マップ表示','pin'],
+  hosp:['医療機関連携','hosp'], notes:['申し送り・要確認','clip'], csv:['CSV・Excel入出力','file'], settings:['設定','gear'],
+};
+function go(v, push=true){
+  if (!VIEWS[v]) v = 'dashboard';
+  S.view = v;
+  $$('.view').forEach(el => el.classList.toggle('hidden', el.id !== 'v-' + v));
+  $$('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#pageTitle').innerHTML = `${ic(VIEWS[v][1])}<span>${VIEWS[v][0]}</span>`;
+  document.title = `${VIEWS[v][0]}｜子育てタクシー 利用者管理システム`;
+  if (push && location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
+  closeSide();
+  renderCurrent(true);
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', () => go(location.hash.slice(1), false));
+$('#nav').addEventListener('click', e => { const b = e.target.closest('.nav-btn'); if (b) go(b.dataset.v); });
+
+function renderCurrent(full=true){
+  renderChrome();
+  const v = S.view;
+  if (v === 'dashboard') renderDash(full);
+  else if (v === 'users') renderUsers(full);
+  else if (v === 'map') renderMapView(full);
+  else if (v === 'hosp') renderHosp();
+  else if (v === 'notes') renderNotes();
+  else if (v === 'csv') renderCsv();
+  else if (v === 'settings') renderSettings();
+}
+function renderAll(){ renderCurrent(true); }
+
+function needData(view){
+  const has = S.people.length > 0;
+  const holder = view.querySelector('[data-needdata]');
+  const body = view.querySelector('.needs-data');
+  if (holder){
+    holder.innerHTML = has ? '' : `<div class="panel welcome"><img src="logo.png" alt=""><div><h2>利用者データがまだ読み込まれていません</h2><p>お客様情報（フォーム回答）のExcel / CSVを読み込むと表示されます。<br>データはこのブラウザ内だけで処理されます。</p><button class="btn btn-o" data-go="csv">${ic('ul')}ファイルを読み込む</button></div></div>`;
+  }
+  if (body) body.classList.toggle('hidden', !has);
+  return has;
+}
+
+function renderChrome(){
+  const people = S.people;
+  const unc = unconfirmedCount();
+  const red = people.filter(p => dueInfo(p.due).st === 'red').length;
+  const over = people.filter(p => dueInfo(p.due).st === 'over').length;
+  const bell = unc + red + over;
+  const bc = $('#bellCnt'); bc.textContent = bell > 99 ? '99+' : bell; bc.classList.toggle('hidden', !bell);
+  $('#bellBtn').title = `未確認の申し送り ${unc}件／7日以内 ${red}名／予定日超過 ${over}名`;
+  const nc = $('#navNoteCnt'); nc.textContent = unc; nc.classList.toggle('hidden', !unc);
+  $('#staffName').textContent = DB.cfg.staff || '担当者未設定';
+}
+
+function renderDash(full){
+  const has = S.people.length > 0;
+  $('#dashEmpty').classList.toggle('hidden', has);
+  $('#dashBody').classList.toggle('hidden', !has);
+  if (!has) return;
+  const people = S.people;
+  const red = people.filter(p => dueInfo(p.due).st === 'red').length;
+  const amber = people.filter(p => dueInfo(p.due).st === 'amber').length;
+  const attn = people.filter(p => ['over','none'].includes(dueInfo(p.due).st)).length;
+  const unc = unconfirmedCount();
+  const linked = people.filter(p => hospOf(p)).length;
+  $('#stats').innerHTML = `
+    <button class="stat g" data-card="all"><span class="si">${ic('users')}</span><span><span class="sl">登録者数</span><span class="sv" style="display:block">${people.length}<small>名</small></span><span class="ss">${esc(S.fileName)}</span></span></button>
+    <button class="stat r" data-card="7"><span class="si">${ic('cal')}</span><span><span class="sl">出産予定日まで7日以内</span><span class="sv" style="display:block">${red}<small>名</small></span><span class="ss">8〜30日：${amber}名</span></span></button>
+    <button class="stat a" data-card="notes"><span class="si">${ic('alert')}</span><span><span class="sl">要確認</span><span class="sv" style="display:block">${unc}<small>件</small></span><span class="ss">未確認の申し送り／日付要確認 ${attn}名</span></span></button>
+    <button class="stat t" data-card="hosp"><span class="si">${ic('hosp')}</span><span><span class="sl">医療機関連携</span><span class="sv" style="display:block">${DB.hosp.length}<small>施設</small></span><span class="ss">紐付け済み利用者：${linked}名</span></span></button>`;
+  const view = $('#v-dashboard');
+  renderFilterBar(view, full);
+  const list = renderPeopleList($('#dashList'), false);
+  if (window.matchMedia('(min-width:901px)').matches) refreshMap('dash', 'dashMap', list, 'dashSel');
+  else renderSelCard('dashSel');
+}
+$('#stats').addEventListener('click', e => {
+  const c = e.target.closest('[data-card]'); if (!c) return;
+  const k = c.dataset.card;
+  if (k === 'all'){ S.f = {q:'', range:'all', hosp:'all', note:'all'}; S.us = {key:'due', dir:1}; go('users'); }
+  else if (k === '7'){ S.f = {q:'', range:'7', hosp:'all', note:'all'}; S.us = {key:'due', dir:1}; go('users'); }
+  else go(k);
+});
+
+function renderUsers(full){
+  const view = $('#v-users');
+  if (!needData(view)) return;
+  renderFilterBar(view, full);
+  renderPeopleList($('#userList'), true);
+}
+
+/* ============================================================
+   利用者詳細（サイドパネル）
+============================================================ */
+function openDetail(pk){
+  const p = S.pmap.get(pk); if (!p) return;
+  S.selected = pk;
+  $$('.prow.sel').forEach(el => el.classList.remove('sel'));
+  $$(`.prow[data-pk="${pk}"]`).forEach(el => el.classList.add('sel'));
+  highlightMarker();
+  renderSelCard('dashSel'); renderSelCard('bigSel');
+  renderDetail();
+  $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
+  $('#scrim').classList.add('on');
+  setTimeout(() => $('#drawer .dclose')?.focus(), 50);
+}
+function closeDetail(){
+  $('#drawer').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true');
+  $('#scrim').classList.remove('on');
+  closeSide();
+}
+$('#scrim').addEventListener('click', () => { closeDetail(); closeSide(); });
+
+function renderDetail(editing=false){
+  const p = S.pmap.get(S.selected); if (!p) return;
+  const di = dueInfo(p.due), h = hospOf(p), ns = notesOf(p.pk).slice().sort((a,b) => (b.ca||'').localeCompare(a.ca||''));
+  const linkedManually = !!DB.links[p.pk] && !!hospById(DB.links[p.pk]);
+  const geo = p.addr ? DB.geo[geoKeyOf(p.addr)] : null;
+  const cs = confState(p.pk);
+  const d = $('#drawer');
+  d.innerHTML = `
+    <div class="dh">
+      <span class="av">${esc(initial(p.name))}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:1.15rem;font-weight:800;word-break:break-all">${esc(p.name)}</div>
+        <div class="small muted">${esc(p.kana)}</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${badge(di)}${confTag(cs)}</div>
+      </div>
+      <button class="icon-btn dclose" aria-label="閉じる">${ic('x','l')}</button>
+    </div>
+    <div class="db">
+      ${editing ? editFormHTML(p) : `
+      <div class="panel panel-b">
+        <dl class="kv">
+          <dt>出産予定日</dt><dd><b>${p.due ? esc(fmtDate(p.due)) : '未登録'}</b>　<span class="days ${di.st}">${esc(daysText(di))}</span>${di.weeks ? `<span class="muted small">（妊娠${di.weeks}週）</span>` : ''}${di.st === 'over' ? '<div class="small" style="color:var(--red-ink)">予定日を過ぎています。出産状況・今後の利用をご確認ください（自動で利用終了にはしません）。</div>' : ''}</dd>
+          <dt>住所</dt><dd>${esc(p.addr) || '<span class="muted">未登録</span>'}</dd>
+          <dt>電話番号</dt><dd>${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:var(--green);font-weight:700">${ic('phone','s')} ${esc(p.phone)}</a>` : '<span class="muted">未登録</span>'}</dd>
+          <dt>回答の産院名</dt><dd>${esc(p.hosp) || '<span class="muted">未記入</span>'}</dd>
+          <dt>登録日時</dt><dd>${p.ts ? esc(fmtDT(p.ts.toISOString())) : '<span class="muted">—</span>'}<span class="small muted">（フォーム回答）</span></dd>
+          <dt>識別キー</dt><dd class="small muted">${esc(p.pk)}</dd>
+        </dl>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn btn-w btn-s" id="dEdit">${ic('edit','s')}編集</button>
+          ${p.addr ? `<button class="btn btn-w btn-s" id="dMap">${ic('pin','s')}地図で表示</button>
+          <a class="btn btn-w btn-s" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.addr)}" target="_blank" rel="noopener noreferrer">${ic('ext','s')}Googleマップで開く</a>` : ''}
+        </div>
+        ${p.addr && !geo ? '<div class="small muted" style="margin-top:6px">地図の位置は未取得です（マップの「位置情報を取得」で取得できます）。</div>' : ''}
+        ${geo && geo.fail ? '<div class="small" style="margin-top:6px;color:var(--amber-ink)">住所から位置を特定できませんでした。</div>' : ''}
+      </div>`}
+
+      <div class="panel panel-b">
+        <div class="sec-t">${ic('hosp','s')}かかりつけ産婦人科</div>
+        ${h ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(h.name)}</b><span class="tag t-done">${linkedManually ? '手動で紐付け' : 'マスタと一致'}</span></div>
+          <div class="small muted">${[h.addr, h.tel].filter(Boolean).map(esc).join('　')}</div>` : `<div class="small muted">医療機関マスタと紐付いていません${p.hosp ? `（回答：${esc(p.hosp)}）` : ''}</div>`}
+        <form id="dHospForm" style="display:flex;gap:8px;margin-top:10px" autocomplete="off">
+          <input class="inp" id="dHospIn" list="hospDL" placeholder="医療機関を検索して選択" value="">
+          <button class="btn btn-g btn-s" type="submit">${ic('link','s')}紐付け</button>
+        </form>
+        <div class="actions" style="margin-top:8px">
+          ${!h && p.hosp ? `<button class="btn btn-w btn-s" id="dHospReg">「${esc(p.hosp.slice(0,14))}」をマスタに登録</button>` : ''}
+          ${linkedManually ? '<button class="btn btn-w btn-s" id="dHospUnlink">手動の紐付けを解除</button>' : ''}
+        </div>
+      </div>
+
+      <div class="panel panel-b">
+        <div class="sec-t">${ic('clip','s')}申し送り・特記事項<span class="spacer"></span>${ns.some(n => n.st !== '確認済み') ? '<button class="btn btn-w btn-s" id="dAllDone">すべて確認済みにする</button>' : ''}</div>
+        <div id="dNotes">${ns.map(noteItemHTML.bind(null, false)).join('') || '<p class="small muted" style="margin-bottom:10px">申し送りはありません。</p>'}</div>
+        <form id="dNoteForm" autocomplete="off">
+          <div class="field"><label for="dnText">新しい申し送り</label><textarea class="inp" id="dnText" maxlength="1000" placeholder="例：車両連絡が必要、上の子同乗あり、チャイルドシート2台 など" required></textarea></div>
+          <div class="row2">
+            <div class="field"><label for="dnPri">優先度</label><select class="inp" id="dnPri"><option>高</option><option selected>中</option><option>低</option></select></div>
+            <div class="field"><label for="dnWho">担当者</label><input class="inp" id="dnWho" maxlength="30" value="${esc(DB.cfg.staff)}"></div>
+          </div>
+          <button class="btn btn-o btn-s" type="submit">${ic('plus','s')}追加</button>
+        </form>
+      </div>
+    </div>`;
+  d.querySelector('.dclose').onclick = closeDetail;
+  d.querySelector('#dEdit')?.addEventListener('click', () => renderDetail(true));
+  d.querySelector('#dMap')?.addEventListener('click', () => { closeDetail(); go('map'); setTimeout(() => focusMarker(p.pk, true), 350); });
+  d.querySelector('#dHospForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = $('#dHospIn').value.trim(); if (!v) return;
+    let hh = matchHosp(v);
+    if (!hh){ if (!confirm(`「${v}」は医療機関マスタにありません。新しく登録して紐付けますか？`)) return; hh = addHosp({name:v}); }
+    DB.links[p.pk] = hh.id; save('links'); toast(`${hh.name} と紐付けました`); renderDetail(); renderCurrent(false);
+  });
+  d.querySelector('#dHospReg')?.addEventListener('click', () => { const hh = addHosp({name:p.hosp}); toast(`${hh.name} をマスタに登録しました`); renderDetail(); renderCurrent(false); });
+  d.querySelector('#dHospUnlink')?.addEventListener('click', () => { delete DB.links[p.pk]; save('links'); renderDetail(); renderCurrent(false); });
+  d.querySelector('#dNoteForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const t = $('#dnText').value.trim(); if (!t) return;
+    addNote(p.pk, t, $('#dnPri').value, $('#dnWho').value);
+    toast('申し送りを追加しました'); renderDetail(); renderCurrent(false);
+  });
+  d.querySelector('#dAllDone')?.addEventListener('click', () => { notesOf(p.pk).forEach(n => { if (n.st !== '確認済み') setNoteStatus(n.id, '確認済み'); }); toast('確認済みにしました'); renderDetail(); renderCurrent(false); });
+  bindNoteActions(d.querySelector('#dNotes'), () => { renderDetail(); renderCurrent(false); });
+  if (editing){
+    d.querySelector('#eCancel').onclick = () => renderDetail();
+    d.querySelector('#eForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const nm = cleanName($('#eName').value);
+      if (!nm){ alert('氏名は必須です'); return; }
+      const dueV = $('#eDue').value;
+      p.name = nm; p.kana = cleanName($('#eKana').value); p.addr = cleanName($('#eAddr').value);
+      p.phone = normPhone($('#ePhone').value) || $('#ePhone').value.trim();
+      p.due = dueV ? parseDate(dueV) : null; p.hosp = cleanName($('#eHosp').value);
+      buildPeopleDatalist(); updateHitCount();
+      toast('変更しました（読み込み中のデータに反映）'); renderDetail(); renderCurrent(false);
+    });
+  }
+}
+function buildPeopleDatalist(){ $('#peopleDL').innerHTML = S.people.map(p => `<option value="${esc(p.name)}（${esc(fmtDate(p.due) || '予定日未登録')}）">`).join(''); }
+function editFormHTML(p){
+  return `<form class="panel panel-b" id="eForm" autocomplete="off">
+    <div class="sec-t">${ic('edit','s')}利用者情報の編集</div>
+    <div class="row2"><div class="field"><label for="eName">氏名 *</label><input class="inp" id="eName" value="${esc(p.name)}" required></div>
+    <div class="field"><label for="eKana">フリガナ</label><input class="inp" id="eKana" value="${esc(p.kana)}"></div></div>
+    <div class="field"><label for="eDue">出産予定日</label><input class="inp" type="date" id="eDue" value="${p.due ? toInput(p.due) : ''}"></div>
+    <div class="field"><label for="eAddr">住所</label><input class="inp" id="eAddr" value="${esc(p.addr)}"></div>
+    <div class="row2"><div class="field"><label for="ePhone">電話番号</label><input class="inp" id="ePhone" value="${esc(p.phone)}" inputmode="tel"></div>
+    <div class="field"><label for="eHosp">産院名（回答）</label><input class="inp" id="eHosp" value="${esc(p.hosp)}" list="hospDL"></div></div>
+    <p class="small muted" style="margin-bottom:10px">編集内容は読み込み中のデータにのみ反映され、リスト作成・CSV/Excel出力に使われます。元のファイルは変更されません。</p>
+    <div class="actions"><button class="btn btn-o btn-s" type="submit">保存</button><button class="btn btn-w btn-s" type="button" id="eCancel">キャンセル</button></div>
+  </form>`;
+}
+function noteItemHTML(withPerson, n){
+  const p = S.pmap.get(n.pk);
+  const who = withPerson ? (p ? `<button class="linkbtn" style="font-weight:700;color:var(--ink);text-decoration:none" data-open="${p.pk}">${esc(p.name)}</button>${badge(dueInfo(p.due))}` : '<span class="muted">（読み込み中のデータにいない利用者）</span>') : '';
+  return `<div class="note-item ${NST_CLS[n.st]}" data-nid="${n.id}">
+    <div class="note-top">${who}<span class="tag pri-${n.pri}">優先度：${n.pri}</span>
+      <div class="seg" role="group" aria-label="対応状況">${NST.map(s => `<button type="button" class="${NST_CLS[s]} ${n.st === s ? 'on' : ''}" data-st="${s}" aria-pressed="${n.st === s}">${s}</button>`).join('')}</div>
+    </div>
+    <div class="note-text ${n.text.length > 60 ? 'clip' : ''}" title="${n.text.length > 60 ? 'クリックで全文表示' : ''}">${esc(n.text)}</div>
+    <div class="note-meta">担当：${esc(n.who || '—')}　登録：${esc(fmtDT(n.ca))}　更新：${esc(fmtDT(n.ua))}${n.by ? `（${esc(n.by)}）` : ''}
+      <button class="linkbtn" data-ndel="${n.id}">削除</button></div>
+  </div>`;
+}
+function bindNoteActions(root, after){
+  root.onclick = e => {
+    const st = e.target.closest('[data-st]');
+    if (st){ setNoteStatus(st.closest('[data-nid]').dataset.nid, st.dataset.st); after(); return; }
+    const del = e.target.closest('[data-ndel]');
+    if (del){ if (!confirm('この申し送りを削除しますか？')) return; DB.notes = DB.notes.filter(n => n.id !== del.dataset.ndel); saveNotes(); after(); return; }
+    const op = e.target.closest('[data-open]'); if (op){ openDetail(op.dataset.open); return; }
+    const tx = e.target.closest('.note-text'); if (tx) tx.classList.toggle('clip');
+  };
+}
+
+/* ============================================================
+   申し送り・要確認 画面
+============================================================ */
+$('#noteTabs').addEventListener('click', e => { const t = e.target.closest('[data-ns]'); if (!t) return; S.noteTab = t.dataset.ns; renderNotes(); });
+$('#noteAddForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('#naWho').value.trim();
+  const p = S.people.find(x => `${x.name}（${fmtDate(x.due) || '予定日未登録'}）` === v) || S.people.filter(x => x.name === v).length === 1 && S.people.find(x => x.name === v);
+  if (!p){ alert(S.people.length ? '一覧から利用者を選択してください（同姓同名の場合は予定日付きの候補を選択）' : '先に利用者データを読み込んでください'); return; }
+  addNote(p.pk, $('#naText').value, $('#naPri').value, $('#naAs').value);
+  $('#naText').value = ''; $('#naWho').value = '';
+  toast('申し送りを追加しました'); renderCurrent();
+});
+function renderNotes(){
+  $$('#noteTabs .tab').forEach(t => t.classList.toggle('on', t.dataset.ns === S.noteTab));
+  if (!$('#naAs').value) $('#naAs').value = DB.cfg.staff || '';
+  const pri = {'高':0,'中':1,'低':2}, sto = {'未確認':0,'対応中':1,'確認済み':2};
+  const list = DB.notes.filter(n => S.noteTab === 'all' ? true : S.noteTab === 'open' ? n.st !== '確認済み' : n.st === S.noteTab)
+    .sort((a,b) => (sto[a.st]-sto[b.st]) || (pri[a.pri]-pri[b.pri]) || (b.ua||'').localeCompare(a.ua||''));
+  $('#noteList').innerHTML = list.map(noteItemHTML.bind(null, true)).join('') || `<div class="empty">${ic('check')}<br>${S.noteTab === 'open' ? '対応が必要な申し送りはありません。' : '該当する申し送りはありません。'}</div>`;
+  bindNoteActions($('#noteList'), renderCurrent);
+  const attn = sortPeople(S.people.filter(p => ['red','over','none'].includes(dueInfo(p.due).st)));
+  const ord = {red:0, over:1, none:2};
+  attn.sort((a,b) => ord[dueInfo(a.due).st] - ord[dueInfo(b.due).st]);
+  $('#attnList').innerHTML = S.people.length
+    ? (attn.map(p => rowHTML(p, false)).join('') || `<div class="empty">${ic('check')}<br>予定日が7日以内・超過・未登録の利用者はいません。</div>`)
+    : `<div class="empty">利用者データを読み込むと表示されます。<br><button class="btn btn-o btn-s" data-go="csv" style="margin-top:10px">ファイルを読み込む</button></div>`;
+}
+$('#bellBtn').addEventListener('click', () => { S.noteTab = 'open'; go('notes'); });
+
+/* ============================================================
+   医療機関 画面
+============================================================ */
+$('#hq').addEventListener('input', debounce(renderHosp, 120));
+function renderHosp(){
+  hospIndex();
+  const q = normH($('#hq').value);
+  const cnt = new Map();
+  S.people.forEach(p => { const h = hospOf(p); if (h) cnt.set(h.id, (cnt.get(h.id)||0) + 1); });
+  const list = [...DB.hosp].filter(h => !q || normH([h.name, ...(h.aliases||[]), h.addr].join(' ')).includes(q)).sort((a,b) => (cnt.get(b.id)||0) - (cnt.get(a.id)||0) || a.name.localeCompare(b.name,'ja'));
+  $('#hospCount').textContent = `${DB.hosp.length}施設`;
+  $('#hospList').innerHTML = list.map(h => `<div class="h-item">
+      <div class="hn">${esc(h.name)} <span class="tag t-done">${cnt.get(h.id)||0}名</span></div>
+      <div class="actions"><button class="btn btn-w btn-s" data-hshow="${h.id}" ${S.people.length ? '' : 'disabled'}>${ic('users','s')}利用者</button><button class="btn btn-w btn-s" data-hedit="${h.id}">${ic('edit','s')}</button><button class="btn btn-danger btn-s" data-hdel="${h.id}" aria-label="削除">${ic('trash','s')}</button></div>
+      <div class="hd">${h.addr ? `<span>${ic('pin','s')} ${esc(h.addr)}</span>` : ''}${h.tel ? `<span>${ic('phone','s')} ${esc(h.tel)}</span>` : ''}${(h.aliases||[]).length ? `<span>別名：${esc(h.aliases.join('、'))}</span>` : ''}${h.memo ? `<span>メモ：${esc(h.memo)}</span>` : ''}<span>更新：${esc(fmtDT(h.ua))}</span></div>
+    </div>`).join('') || `<div class="empty">${ic('hosp')}<br>${DB.hosp.length ? '該当する医療機関はありません。' : '医療機関はまだ登録されていません。<br>右の「マスタ未登録の産院名」からまとめて登録できます。'}</div>`;
+  // 未登録の産院名
+  const un = new Map();
+  S.people.forEach(p => { if (p.hosp && !hospOf(p)){ const k = normH(p.hosp); const e = un.get(k) || {name:p.hosp, n:0}; e.n++; un.set(k, e); } });
+  const unl = [...un.values()].sort((a,b) => b.n - a.n);
+  $('#hRegAll').disabled = !unl.length;
+  const hopts = [...DB.hosp].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
+  const noLink = S.people.filter(p => !hospOf(p)).length;
+  $('#unregList').innerHTML = !S.people.length ? '<p class="small muted">利用者データを読み込むと、回答の産院名のうちマスタにないものが表示されます。</p>'
+    : (unl.length ? `<p class="small muted" style="margin-bottom:6px">表記ゆれは「既存に統合」で別名として登録すると、以後自動で同じ医療機関として扱います。</p>` + unl.map(u => `<div class="unreg"><span class="un">${esc(u.name)}</span><span class="tag t-nil">${u.n}名</span>
+        <button class="btn btn-g btn-s" data-ureg="${esc(u.name)}">登録</button>
+        ${DB.hosp.length ? `<select data-umerge="${esc(u.name)}" aria-label="既存の医療機関に統合"><option value="">既存に統合…</option>${hopts}</select>` : ''}</div>`).join('')
+      : `<p class="small" style="color:var(--teal-ink)">${ic('check','s')} 回答の産院名はすべてマスタと一致しています。</p>`)
+      + (noLink ? `<p class="small muted" style="margin-top:10px">医療機関未登録の利用者：${noLink}名　<button class="linkbtn" id="showNoHosp">一覧で見る</button></p>` : '');
+  $('#showNoHosp')?.addEventListener('click', () => { S.f = {q:'', range:'all', hosp:'none', note:'all'}; go('users'); });
+}
+$('#v-hosp').addEventListener('click', e => {
+  const sh = e.target.closest('[data-hshow]'); if (sh){ S.f = {q:'', range:'all', hosp:sh.dataset.hshow, note:'all'}; go('users'); return; }
+  const ed = e.target.closest('[data-hedit]');
+  if (ed){ const h = hospById(ed.dataset.hedit); $('#hId').value = h.id; $('#hName').value = h.name; $('#hAlias').value = (h.aliases||[]).join('、'); $('#hAddr').value = h.addr||''; $('#hTel').value = h.tel||''; $('#hMemo').value = h.memo||''; $('#hFormTitle').innerHTML = `${ic('edit')}医療機関を編集`; $('#hCancel').classList.remove('hidden'); $('#hName').focus(); return; }
+  const dl = e.target.closest('[data-hdel]');
+  if (dl){ const h = hospById(dl.dataset.hdel); if (!confirm(`「${h.name}」をマスタから削除しますか？（手動の紐付けも解除されます）`)) return;
+    DB.hosp = DB.hosp.filter(x => x.id !== h.id); Object.keys(DB.links).forEach(k => { if (DB.links[k] === h.id) delete DB.links[k]; }); save('hosp'); save('links'); if (S.f.hosp === h.id) S.f.hosp = 'all'; renderCurrent(); return; }
+  const ur = e.target.closest('[data-ureg]'); if (ur){ addHosp({name:ur.dataset.ureg}); toast('登録しました'); renderCurrent(); return; }
+});
+$('#v-hosp').addEventListener('change', e => {
+  const m = e.target.closest('[data-umerge]'); if (!m || !m.value) return;
+  const h = hospById(m.value); h.aliases = [...new Set([...(h.aliases||[]), m.dataset.umerge])]; h.ua = nowISO(); save('hosp'); toast(`「${m.dataset.umerge}」を ${h.name} の別名として統合しました`); renderCurrent();
+});
+$('#hRegAll').addEventListener('click', () => {
+  const names = new Set(); S.people.forEach(p => { if (p.hosp && !hospOf(p)) names.add(p.hosp); });
+  let n = 0; names.forEach(nm => { if (!matchHosp(nm)){ addHosp({name:nm}); n++; } });
+  toast(`${n}件の医療機関を登録しました`); renderCurrent();
+});
+function resetHForm(){ $('#hForm').reset(); $('#hId').value = ''; $('#hFormTitle').innerHTML = `${ic('plus')}医療機関を登録`; $('#hCancel').classList.add('hidden'); }
+$('#hCancel').addEventListener('click', resetHForm);
+$('#hForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const id = $('#hId').value, name = cleanName($('#hName').value);
+  const aliases = $('#hAlias').value.split(/[、,，]/).map(s => cleanName(s)).filter(Boolean);
+  const data = {name, aliases, addr:cleanName($('#hAddr').value), tel:cleanName($('#hTel').value), memo:$('#hMemo').value.trim()};
+  const dupe = matchHosp(name);
+  if (dupe && dupe.id !== id){ alert(`「${name}」は既に「${dupe.name}」として登録されています（名称または別名が一致）。`); return; }
+  if (id){ Object.assign(hospById(id), data, {ua:nowISO()}); save('hosp'); toast('更新しました'); }
+  else { const h = {id:'h'+uid(), ...data, ca:nowISO(), ua:nowISO()}; DB.hosp.push(h); save('hosp'); toast('登録しました'); }
+  resetHForm(); renderCurrent();
+});
+
+/* ============================================================
+   地図（Leaflet＋国土地理院タイル／必要時のみ遅延読み込み）
+============================================================ */
+const MCOL = {red:'#E65353', amber:'#E9A326', teal:'#3AAE9F', over:'#9AA39C', none:'#9AA39C'};
+let leafletP = null;
+function loadLeaflet(){
+  if (window.L) return Promise.resolve();
+  if (leafletP) return leafletP;
+  leafletP = new Promise((res, rej) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; s.onload = res; s.onerror = () => { leafletP = null; rej(new Error('leaflet')); }; document.head.appendChild(s);
+  });
+  return leafletP;
+}
+function geoOf(p){ if (!p.addr) return null; const g = DB.geo[geoKeyOf(p.addr)]; return g && !g.fail ? g : null; }
+async function refreshMap(key, elId, list, selId){
+  const el = document.getElementById(elId);
+  const withGeo = list.filter(geoOf);
+  const missing = list.filter(p => p.addr && !DB.geo[geoKeyOf(p.addr)]).length;
+  $$('[data-geostat]').forEach(s => s.textContent = `地図に表示：${withGeo.length}名／位置未取得：${missing}名`);
+  renderSelCard(selId);
+  if (!withGeo.length && !S.maps[key]){
+    el.innerHTML = `<div class="ph">${ic('pin','l')}<div>住所の位置情報がまだありません。<br>「位置情報を取得」を押すと、住所のみを国土地理院の住所検索APIへ送信して地図に表示します。</div><button class="btn btn-o btn-s" data-geo>位置情報を取得</button></div>`;
+    return;
+  }
+  try { await loadLeaflet(); } catch(e){ el.innerHTML = `<div class="ph">地図を読み込めませんでした。ネットワーク接続をご確認ください。</div>`; return; }
+  let m = S.maps[key];
+  if (!m || !document.body.contains(m.map.getContainer()) || m.map.getContainer() !== el){
+    el.innerHTML = '';
+    const map = L.map(el, {zoomControl:true, scrollWheelZoom:true}).setView([36.5551, 139.8828], 11);
+    L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {maxZoom:18, attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>'}).addTo(map);
+    m = S.maps[key] = {map, layer:L.layerGroup().addTo(map), mk:new Map(), sig:''};
+  } else m.map.invalidateSize();
+  m.layer.clearLayers(); m.mk.clear();
+  withGeo.forEach(p => {
+    const g = geoOf(p), di = dueInfo(p.due);
+    const c = L.circleMarker([g.lat, g.lng], {radius:8, color:'#fff', weight:2, fillColor:MCOL[di.st], fillOpacity:.95});
+    c.bindTooltip(`${esc(p.name)}　${esc(di.label)}`, {direction:'top', offset:[0,-6]});
+    c.on('click', () => { S.selected = p.pk; highlightMarker(); renderSelCard(selId); $$('.prow.sel').forEach(x => x.classList.remove('sel')); $$(`.prow[data-pk="${p.pk}"]`).forEach(x => { x.classList.add('sel'); x.scrollIntoView({block:'nearest'}); }); });
+    c.addTo(m.layer); m.mk.set(p.pk, c);
+  });
+  const sig = withGeo.map(p => p.pk).join(',');
+  if (sig !== m.sig && withGeo.length){ m.sig = sig; m.map.fitBounds(L.latLngBounds(withGeo.map(p => { const g = geoOf(p); return [g.lat, g.lng]; })), {padding:[30,30], maxZoom:15}); }
+  highlightMarker();
+}
+function highlightMarker(){
+  Object.values(S.maps).forEach(m => m.mk.forEach((c, pk) => {
+    const on = pk === S.selected;
+    c.setStyle({radius: on ? 13 : 8, color: on ? '#294234' : '#fff', weight: on ? 3 : 2});
+    if (on) c.bringToFront();
+  }));
+}
+function focusMarker(pk, zoom){
+  S.selected = pk; highlightMarker();
+  Object.values(S.maps).forEach(m => { const c = m.mk.get(pk); if (c) m.map.setView(c.getLatLng(), zoom ? 15 : m.map.getZoom()); });
+  renderSelCard(S.view === 'map' ? 'bigSel' : 'dashSel');
+  const p = S.pmap.get(pk);
+  if (p && !geoOf(p)) toast('この利用者の位置情報はまだ取得されていません');
+}
+function renderSelCard(selId){
+  const box = document.getElementById(selId); if (!box) return;
+  const p = S.selected && S.pmap.get(S.selected);
+  if (!p){ box.innerHTML = '<p class="small muted" style="margin-top:10px">一覧またはピンを選ぶと、ここに概要が表示されます。</p>'; return; }
+  const di = dueInfo(p.due), h = hospOf(p), on = latestOpenNote(p.pk);
+  box.innerHTML = `<div class="selcard ${di.st === 'red' ? 'st-red' : ''}" data-pk="${p.pk}" role="button" tabindex="0">
+    <span class="av" style="width:40px;height:40px;border-radius:50%;background:var(--orange-soft);color:var(--orange-deep);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none">${esc(initial(p.name))}</span>
+    <div style="flex:1;min-width:0;font-size:.8rem">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:.95rem">${esc(p.name)}</b>${badge(di)}</div>
+      <div class="muted">${p.due ? esc(fmtDate(p.due)) : '予定日未登録'}${di.weeks ? `（妊娠${di.weeks}週）` : ''}　かかりつけ：${esc(h ? h.name : (p.hosp || '未登録'))}</div>
+      <div>特記事項：${on ? `<b style="color:var(--red-ink)">${esc(on.text.slice(0, 40))}</b>` : '<span class="muted">なし</span>'}</div>
+    </div>${ic('chev')}</div>`;
+  box.querySelector('.selcard').onclick = () => openDetail(p.pk);
+}
+async function geocodeMissing(){
+  if (!S.people.length){ toast('先に利用者データを読み込んでください'); return; }
+  const list = applyFilter(S.people);
+  const addrs = [...new Set(list.filter(p => p.addr && !DB.geo[geoKeyOf(p.addr)]).map(p => p.addr))];
+  if (!addrs.length){ toast('表示中の利用者の位置情報はすべて取得済みです'); return; }
+  if (!confirm(`地図表示のため、${addrs.length}件の「住所のみ」を国土地理院の住所検索APIへ送信します。\n氏名・電話番号などは送信しません。取得した位置はこの端末にのみ保存されます。\n\n実行しますか？`)) return;
+  let ok = 0, ng = 0, i = 0;
+  const stat = t => $$('[data-geostat]').forEach(s => s.textContent = t);
+  for (const a of addrs){
+    i++; stat(`位置情報を取得中… ${i}/${addrs.length}`);
+    let q = normA(a).replace(/^〒?\s*\d{3}-?\d{4}\s*/, '');
+    const parts = q.split(' '); if (parts.length > 1 && parts[0].length >= 6) q = parts[0];
+    try{
+      const r = await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + encodeURIComponent(q), {referrerPolicy:'no-referrer', credentials:'omit'});
+      const js = await r.json();
+      if (Array.isArray(js) && js[0] && js[0].geometry){ const [lng, lat] = js[0].geometry.coordinates; DB.geo[geoKeyOf(a)] = {lat:+lat, lng:+lng}; ok++; }
+      else { DB.geo[geoKeyOf(a)] = {fail:true}; ng++; }
+    }catch(e){ ng++; if (i === 1){ stat('位置情報サービスに接続できませんでした'); toast('位置情報サービスに接続できませんでした'); save('geo'); return; } }
+    await new Promise(r => setTimeout(r, 120));
+  }
+  save('geo');
+  toast(`位置情報：${ok}件取得${ng ? `／${ng}件は特定できませんでした` : ''}`);
+  renderCurrent();
+}
+function toggleFullscreen(id){
+  const el = document.getElementById(id);
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (el.requestFullscreen) el.requestFullscreen().catch(() => go('map'));
+  else go('map');
+}
+document.addEventListener('fullscreenchange', () => setTimeout(() => Object.values(S.maps).forEach(m => m.map.invalidateSize()), 120));
+function renderMapView(full){
+  const view = $('#v-map');
+  if (!needData(view)) return;
+  renderFilterBar(view, full);
+  const list = currentList();
+  refreshMap('big', 'bigMap', list, 'bigSel');
+  const noGeo = list.filter(p => !geoOf(p));
+  $('#noGeo').innerHTML = noGeo.length ? `<details><summary class="small" style="cursor:pointer">位置情報が未登録・未確定の利用者（${noGeo.length}名）</summary><div class="plist" style="margin-top:8px">${noGeo.slice(0, 200).map(p => rowHTML(p, false)).join('')}</div></details>` : '';
+}
+
+/* ============================================================
+   利用者一覧の出力（CSV / Excel）
+============================================================ */
+const EXP_COLS = [
+  {k:'no', l:'No.', on:true}, {k:'name', l:'氏名(漢字)', on:true}, {k:'kana', l:'氏名(フリガナ)', on:true}, {k:'addr', l:'住所', on:true},
+  {k:'phone', l:'電話番号', on:true}, {k:'due', l:'出産予定日', on:true}, {k:'hosp', l:'産院名', on:true},
+  {k:'days', l:'残り日数', on:false}, {k:'st', l:'予定日ステータス', on:false}, {k:'hm', l:'かかりつけ（マスタ）', on:false}, {k:'cs', l:'確認状態', on:false}, {k:'notes', l:'申し送り（未完了）', on:false},
+];
+function renderCsv(){
+  const cp = $('#colPick');
+  if (!cp.childElementCount) cp.innerHTML = EXP_COLS.map(c => `<label><input type="checkbox" data-col="${c.k}" ${c.on ? 'checked' : ''}>${c.l}</label>`).join('');
+  const n = applyFilter(S.people).length;
+  $('#expCount').textContent = S.people.length ? `出力件数：${n}名（${chipsText() || '絞り込みなし'}）` : '';
+}
+function chipsText(){ const t = []; if (S.f.q) t.push('検索：' + S.f.q); if (S.f.range !== 'all') t.push(RANGE_OPTS.find(o=>o[0]===S.f.range)[1]); if (S.f.hosp !== 'all') t.push(S.f.hosp === 'none' ? '医療機関未登録' : hospById(S.f.hosp)?.name); if (S.f.note !== 'all') t.push(NOTE_OPTS.find(o=>o[0]===S.f.note)[1]); return t.join('・'); }
+function exportRows(){
+  const cols = EXP_COLS.filter(c => $(`#colPick [data-col="${c.k}"]`)?.checked);
+  const list = sortPeople(applyFilter(S.people));
+  const rows = list.map((p, i) => cols.map(c => {
+    const di = dueInfo(p.due);
+    switch (c.k){
+      case 'no': return i + 1;
+      case 'due': return p.due ? fmtDate(p.due) : '';
+      case 'days': return di.days === null ? '' : di.days;
+      case 'st': return di.label;
+      case 'hm': return hospOf(p)?.name || '';
+      case 'cs': return confState(p.pk) || '';
+      case 'notes': return notesOf(p.pk).filter(n => n.st !== '確認済み').map(n => `[${n.st}/${n.pri}] ${n.text}`).join(' / ');
+      default: return p[c.k] ?? '';
+    }
+  }));
+  return {cols, rows, list};
+}
+$('#btnCsv').addEventListener('click', () => {
+  const {cols, rows} = exportRows();
+  if (!cols.length){ alert('出力する列を選択してください'); return; }
+  if (!rows.length){ alert('出力対象がありません'); return; }
+  const q = v => { const s = String(v ?? ''); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+  const csv = '﻿' + [cols.map(c => q(c.l)).join(','), ...rows.map(r => r.map(q).join(','))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `利用者一覧_${yymmdd(new Date())}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(`${rows.length}名をCSVで出力しました`);
+});
+$('#btnXlsx').addEventListener('click', () => {
+  const {cols, rows} = exportRows();
+  if (!cols.length){ alert('出力する列を選択してください'); return; }
+  if (!rows.length){ alert('出力対象がありません'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([cols.map(c => c.l), ...rows]);
+  const pi = cols.findIndex(c => c.k === 'phone');
+  if (pi >= 0) rows.forEach((r, i) => { const a = XLSX.utils.encode_cell({r:i+1, c:pi}); if (ws[a]){ ws[a].t = 's'; ws[a].v = String(r[pi] ?? ''); } });
+  ws['!cols'] = cols.map(c => ({wch: {no:5, addr:50, hosp:30, hm:30, notes:50, name:16, kana:20}[c.k] || 14}));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '利用者一覧');
+  XLSX.writeFile(wb, `利用者一覧_${yymmdd(new Date())}.xlsx`);
+  toast(`${rows.length}名をExcelで出力しました`);
+});
+$('#colPick').addEventListener('change', renderCsv);
+
+/* ============================================================
+   設定
+============================================================ */
+function renderSettings(){
+  $('#cfgStaff').value = DB.cfg.staff || '';
+  $('#storeStat').textContent = `この端末に保存中：申し送り ${DB.notes.length}件／医療機関 ${DB.hosp.length}施設／紐付け ${Object.keys(DB.links).length}件／位置キャッシュ ${Object.keys(DB.geo).length}件`;
+}
+$('#cfgForm').addEventListener('submit', e => { e.preventDefault(); DB.cfg.staff = cleanName($('#cfgStaff').value); save('cfg'); toast('担当者名を保存しました'); renderCurrent(); });
+$('#staffBtn').addEventListener('click', () => go('settings'));
+$('#v-settings').addEventListener('click', e => {
+  const c = e.target.closest('[data-clear]'); if (!c) return;
+  const k = c.dataset.clear;
+  const label = {geo:'位置キャッシュ', notes:'申し送り', all:'この端末に保存したすべてのデータ（申し送り・医療機関マスタ・紐付け・位置キャッシュ・担当者名）'}[k];
+  if (!confirm(`${label}を消去します。元に戻せません。よろしいですか？`)) return;
+  if (k === 'geo' || k === 'all'){ DB.geo = {}; LS.del('kt_geo'); Object.values(S.maps).forEach(m => { m.layer.clearLayers(); m.mk.clear(); m.sig = ''; }); }
+  if (k === 'notes' || k === 'all'){ DB.notes = []; noteIdxCache = null; LS.del('kt_notes'); }
+  if (k === 'all'){ DB.hosp = []; DB.links = {}; DB.cfg = {staff:''}; hospIdx = null; ['kt_hosp','kt_links','kt_cfg'].forEach(LS.del); }
+  toast('消去しました'); renderCurrent();
+});
+$('#bkExport').addEventListener('click', () => {
+  const data = {app:'kosodate-taxi', v:1, at:nowISO(), notes:DB.notes, hosp:DB.hosp, links:DB.links, geo:DB.geo, cfg:DB.cfg};
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:'application/json'}));
+  a.download = `子育てタクシー_バックアップ_${yymmdd(new Date())}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$('#bkImport').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if (d.app !== 'kosodate-taxi') throw new Error('format');
+    if (!confirm(`バックアップ（${fmtDT(d.at)}）を取り込みます。\n申し送り${(d.notes||[]).length}件・医療機関${(d.hosp||[]).length}施設。\n同じIDのデータは置き換え、それ以外は追加します。よろしいですか？`)) return;
+    const merge = (cur, add) => { const m = new Map(cur.map(x => [x.id, x])); (add||[]).forEach(x => { if (x && x.id) m.set(x.id, x); }); return [...m.values()]; };
+    DB.notes = merge(DB.notes, d.notes); DB.hosp = merge(DB.hosp, d.hosp);
+    DB.links = {...DB.links, ...(d.links||{})}; DB.geo = {...DB.geo, ...(d.geo||{})};
+    if (d.cfg && d.cfg.staff && !DB.cfg.staff) DB.cfg.staff = d.cfg.staff;
+    ['notes','hosp','links','geo','cfg'].forEach(save); noteIdxCache = null;
+    toast('バックアップを復元しました'); renderCurrent();
+  }catch(err){ alert('バックアップファイルを読み込めませんでした。'); }
+});
+
+/* ============================================================
+   モバイルメニュー・起動
+============================================================ */
+function closeSide(){ $('#side').classList.remove('on'); if (!$('#drawer').classList.contains('on')) $('#scrim').classList.remove('on'); }
+$('#menuBtn').addEventListener('click', () => { $('#side').classList.add('on'); $('#scrim').classList.add('on'); });
+window.matchMedia('(min-width:901px)').addEventListener('change', () => renderCurrent(true));
+window.addEventListener('beforeunload', e => { if (state.rows && state.rows.length){ e.preventDefault(); e.returnValue = ''; } });
+// 日付が変わったら残り日数を更新
+let lastDay = new Date().toDateString();
+setInterval(() => { const d = new Date().toDateString(); if (d !== lastDay){ lastDay = d; renderCurrent(false); } }, 60000);
+hospIndex();
+go(location.hash.slice(1) || 'dashboard', false);
+</script>
+</body>
+</html>
